@@ -46,6 +46,7 @@
                 <el-dropdown-item command="profile">个人中心</el-dropdown-item>
                 <el-dropdown-item command="points">积分商城</el-dropdown-item>
                 <el-dropdown-item command="orders">我的订单</el-dropdown-item>
+                <el-dropdown-item command="refunds">售后管理</el-dropdown-item>
                 <el-dropdown-item command="address">收货地址</el-dropdown-item>
                 <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
               </el-dropdown-menu>
@@ -118,6 +119,8 @@ function handleUserCommand(cmd) {
     router.push('/orders');
   } else if (cmd === 'address') {
     router.push('/profile/address');
+  } else if (cmd === 'refunds') {
+    router.push('/refunds');
   }
 }
 </script>

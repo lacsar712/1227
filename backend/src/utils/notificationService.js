@@ -21,6 +21,26 @@ const notificationTemplates = {
     title: '售后进度更新',
     content: (orderNo, status) => `您的订单 ${orderNo} 售后状态已更新为：${status}。`
   },
+  refund_applied: {
+    title: '售后申请已提交',
+    content: (refundNo, productName) => `您的售后申请 ${refundNo}（${productName}）已提交，等待审核。`
+  },
+  refund_approved: {
+    title: '售后申请已通过',
+    content: (refundNo) => `您的售后申请 ${refundNo} 已通过审核，请按照提示处理。`
+  },
+  refund_rejected: {
+    title: '售后申请被拒绝',
+    content: (refundNo, rejectReason) => `您的售后申请 ${refundNo} 未通过，原因：${rejectReason}。`
+  },
+  refund_completed: {
+    title: '售后已完成',
+    content: (refundNo) => `您的售后申请 ${refundNo} 已处理完成。`
+  },
+  refund_cancelled: {
+    title: '售后申请已取消',
+    content: (refundNo) => `您的售后申请 ${refundNo} 已取消。`
+  },
   system: {
     title: '系统通知',
     content: (message) => message
@@ -50,6 +70,21 @@ async function createNotification(userId, type, relatedId, relatedType, extra = 
         break;
       case 'after_sale':
         content = template.content(extra.orderNo, extra.status);
+        break;
+      case 'refund_applied':
+        content = template.content(extra.refundNo, extra.productName);
+        break;
+      case 'refund_approved':
+        content = template.content(extra.refundNo);
+        break;
+      case 'refund_rejected':
+        content = template.content(extra.refundNo, extra.rejectReason);
+        break;
+      case 'refund_completed':
+        content = template.content(extra.refundNo);
+        break;
+      case 'refund_cancelled':
+        content = template.content(extra.refundNo);
         break;
       case 'system':
         content = template.content(extra.message);

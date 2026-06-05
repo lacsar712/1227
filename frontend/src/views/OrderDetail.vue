@@ -38,6 +38,11 @@
           <div class="actions" v-if="order.status === 'shipped'">
             <el-button type="success" @click="complete">确认收货</el-button>
           </div>
+          <div class="actions" v-if="order.status === 'completed'">
+            <router-link :to="`/refund/apply?order_id=${order.id}`">
+              <el-button type="primary">申请售后</el-button>
+            </router-link>
+          </div>
         </el-card>
       </div>
     </template>

@@ -105,6 +105,24 @@ const routes = [
     name: 'PointsMall',
     component: () => import('@/views/PointsMall.vue'),
     meta: { title: '积分商城' }
+  },
+  {
+    path: '/refunds',
+    name: 'Refunds',
+    component: () => import('@/views/Refunds.vue'),
+    meta: { title: '售后管理', auth: true }
+  },
+  {
+    path: '/refund/apply',
+    name: 'RefundApply',
+    component: () => import('@/views/RefundApply.vue'),
+    meta: { title: '申请售后', auth: true }
+  },
+  {
+    path: '/refund/:id',
+    name: 'RefundDetail',
+    component: () => import('@/views/RefundDetail.vue'),
+    meta: { title: '售后详情', auth: true }
   }
 ];
 

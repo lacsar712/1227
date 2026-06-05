@@ -78,3 +78,12 @@ export const pointsApi = {
   redeem: (productId) => api.post('/points/redeem', { product_id: productId }),
   getRecords: (params) => api.get('/points/records', { params })
 };
+
+export const refundsApi = {
+  list: (params) => api.get('/refunds', { params }),
+  detail: (id) => api.get(`/refunds/${id}`),
+  getApplicableItems: (orderId) => api.get(`/refunds/order/${orderId}/applicable-items`),
+  apply: (data) => api.post('/refunds/apply', data),
+  cancel: (id) => api.post(`/refunds/${id}/cancel`),
+  complete: (id) => api.post(`/refunds/${id}/complete`)
+};

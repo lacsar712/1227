@@ -14,7 +14,7 @@ const Notification = sequelize.define(
       allowNull: false
     },
     type: {
-      type: DataTypes.ENUM('order_paid', 'order_shipped', 'order_cancelled', 'order_completed', 'after_sale', 'system'),
+      type: DataTypes.ENUM('order_paid', 'order_shipped', 'order_cancelled', 'order_completed', 'after_sale', 'system', 'refund_applied', 'refund_approved', 'refund_rejected', 'refund_completed', 'refund_cancelled'),
       allowNull: false
     },
     title: {
@@ -26,7 +26,7 @@ const Notification = sequelize.define(
       allowNull: false
     },
     related_type: {
-      type: DataTypes.ENUM('order', 'product', 'system'),
+      type: DataTypes.ENUM('order', 'product', 'system', 'refund'),
       allowNull: true
     },
     related_id: {

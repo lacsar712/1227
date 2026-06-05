@@ -19,6 +19,8 @@
         <el-radio-button value="order_cancelled">订单取消</el-radio-button>
         <el-radio-button value="order_completed">订单完成</el-radio-button>
         <el-radio-button value="after_sale">售后进度</el-radio-button>
+        <el-radio-button value="refund_applied">售后申请</el-radio-button>
+        <el-radio-button value="refund_completed">售后完成</el-radio-button>
         <el-radio-button value="system">系统通知</el-radio-button>
       </el-radio-group>
       <el-radio-group v-model="readFilter" @change="load">
@@ -87,7 +89,11 @@ import {
   Close,
   CircleCheck,
   Service,
-  Bell
+  Bell,
+  RefreshRight,
+  Tickets,
+  CircleClose,
+  CircleCheckFilled
 } from '@element-plus/icons-vue';
 import { useNotificationStore } from '@/stores/notification';
 
@@ -109,6 +115,11 @@ const notificationIcons = {
   order_cancelled: Close,
   order_completed: CircleCheck,
   after_sale: Service,
+  refund_applied: Tickets,
+  refund_approved: CircleCheck,
+  refund_rejected: CircleClose,
+  refund_completed: CircleCheckFilled,
+  refund_cancelled: Close,
   system: Bell
 };
 
@@ -118,6 +129,11 @@ const typeLabels = {
   order_cancelled: '订单通知',
   order_completed: '订单通知',
   after_sale: '售后通知',
+  refund_applied: '售后通知',
+  refund_approved: '售后通知',
+  refund_rejected: '售后通知',
+  refund_completed: '售后通知',
+  refund_cancelled: '售后通知',
   system: '系统通知'
 };
 
@@ -161,6 +177,11 @@ function handleCardClick(notification) {
       notificationStore.markRead(notification.id);
     }
     router.push(`/order/${notification.related_id}`);
+  } else if (notification.related_type === 'refund' && notification.related_id) {
+    if (!notification.is_read) {
+      notificationStore.markRead(notification.id);
+    }
+    router.push(`/refund/${notification.related_id}`);
   }
 }
 
@@ -250,6 +271,26 @@ async function handleMarkAllRead() {
 .notification-icon.after_sale {
   background: #fef3c7;
   color: #d97706;
+}
+.notification-icon.refund_applied {
+  background: #dbeafe;
+  color: #2563eb;
+}
+.notification-icon.refund_approved {
+  background: #dcfce7;
+  color: #16a34a;
+}
+.notification-icon.refund_rejected {
+  background: #fee2e2;
+  color: #dc2626;
+}
+.notification-icon.refund_completed {
+  background: #d1fae5;
+  color: #059669;
+}
+.notification-icon.refund_cancelled {
+  background: #f1f5f9;
+  color: #64748b;
 }
 .notification-icon.system {
   background: #f3e8ff;
