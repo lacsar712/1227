@@ -63,3 +63,9 @@ export const notificationsApi = {
   markRead: (id) => api.post(`/notifications/${id}/read`),
   markAllRead: () => api.post('/notifications/read-all')
 };
+
+export const questionsApi = {
+  list: (productId, params) => api.get(`/questions/product/${productId}`, { params }),
+  create: (productId, data) => api.post(`/questions/product/${productId}`, data),
+  answer: (id, data) => api.put(`/questions/${id}/answer`, data)
+};

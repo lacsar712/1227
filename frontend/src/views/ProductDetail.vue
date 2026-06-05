@@ -108,6 +108,31 @@
           </el-alert>
         </div>
       </div>
+
+      <div class="product-tabs">
+        <el-tabs v-model="activeTab" type="border-card">
+          <el-tab-pane label="商品详情" name="detail">
+            <div class="detail-content">
+              <div class="detail-section">
+                <h3 class="section-title">商品介绍</h3>
+                <p class="detail-desc">{{ product.description }}</p>
+              </div>
+              <div class="detail-section" v-if="product.specs">
+                <h3 class="section-title">规格参数</h3>
+                <div class="specs-grid">
+                  <div v-for="(value, key) in product.specs" :key="key" class="spec-item">
+                    <span class="spec-label">{{ key }}</span>
+                    <span class="spec-value">{{ value }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </el-tab-pane>
+          <el-tab-pane label="问大家" name="qa">
+            <ProductQA :product-id="product.id" />
+          </el-tab-pane>
+        </el-tabs>
+      </div>
     </template>
     <el-empty v-else-if="!loading && !product" description="商品不存在" />
   </div>
@@ -122,6 +147,9 @@ import { productsApi } from '@/api';
 import { useUserStore } from '@/stores/user';
 import { useCartStore } from '@/stores/cart';
 import CountdownTimer from '@/components/ui/CountdownTimer.vue';
+import ProductQA from '@/components/ui/ProductQA.vue';
+
+const activeTab = ref('detail');
 
 const route = useRoute();
 const router = useRouter();
@@ -231,6 +259,89 @@ function buyNow() {
   grid-template-columns: 1fr 1fr;
   gap: 48px;
   padding: 32px 0;
+}
+
+.product-tabs {
+  margin-top: 32px;
+}
+
+.product-tabs :deep(.el-tabs__header) {
+  margin-bottom: 0;
+}
+
+.product-tabs :deep(.el-tabs__item) {
+  font-size: 15px;
+  font-weight: 500;
+  height: 50px;
+  line-height: 50px;
+}
+
+.product-tabs :deep(.el-tabs__item.is-active) {
+  color: var(--color-primary);
+}
+
+.product-tabs :deep(.el-tabs__active-bar) {
+  background-color: var(--color-primary);
+}
+
+.product-tabs :deep(.el-tab-pane) {
+  padding: 24px;
+}
+
+.detail-content {
+  min-height: 200px;
+}
+
+.detail-section {
+  margin-bottom: 32px;
+}
+
+.detail-section:last-child {
+  margin-bottom: 0;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 16px;
+  color: var(--color-text);
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.detail-desc {
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.specs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.spec-item {
+  display: flex;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  gap: 12px;
+}
+
+.spec-label {
+  font-size: 14px;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+  width: 80px;
+}
+
+.spec-value {
+  font-size: 14px;
+  color: var(--color-text);
+  font-weight: 500;
+  flex: 1;
 }
 .gallery {
   position: relative;
@@ -459,5 +570,17 @@ function buyNow() {
 @media (max-width: 768px) {
   .product-detail { grid-template-columns: 1fr; }
   .flash-price { font-size: 28px; }
+
+  .product-tabs :deep(.el-tab-pane) {
+    padding: 16px;
+  }
+
+  .specs-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .section-title {
+    font-size: 16px;
+  }
 }
 </style>
