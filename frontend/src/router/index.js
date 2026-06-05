@@ -99,6 +99,12 @@ const routes = [
     name: 'BrandDetail',
     component: () => import('@/views/BrandDetail.vue'),
     meta: { title: '品牌详情' }
+  },
+  {
+    path: '/points-mall',
+    name: 'PointsMall',
+    component: () => import('@/views/PointsMall.vue'),
+    meta: { title: '积分商城' }
   }
 ];
 

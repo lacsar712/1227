@@ -14,6 +14,7 @@ const auth = require('../middleware/auth');
 const validate = require('../middleware/validate');
 const logger = require('../utils/logger');
 const { createNotification } = require('../utils/notificationService');
+const pointsService = require('../utils/pointsService');
 
 const router = express.Router();
 router.use(auth);
@@ -324,14 +325,42 @@ router.post('/:id/complete', async (req, res) => {
       return res.status(400).json({ code: 400, message: '订单未发货，无法完成' });
     }
     await order.update({ status: 'completed' });
+    
+    let pointsResult = null;
+    try {
+      pointsResult = await pointsService.processOrderComplete(
+        req.user.id,
+        order.id,
+        order.total_amount
+      );
+    } catch (pointsErr) {
+      logger.error('Order points error:', pointsErr);
+    }
+    
     await createNotification(
       req.user.id,
       'order_completed',
       order.id,
       'order',
-      { orderNo: order.order_no }
+      { 
+        orderNo: order.order_no,
+        pointsEarned: pointsResult?.added || 0
+      }
     );
-    res.json({ code: 0, data: order, message: '订单已完成' });
+    
+    const account = await pointsService.getAccount(req.user.id);
+    
+    res.json({ 
+      code: 0, 
+      data: { 
+        order, 
+        points: pointsResult,
+        account 
+      }, 
+      message: pointsResult?.added 
+        ? `订单已完成，获得 ${pointsResult.added} 积分` 
+        : '订单已完成' 
+    });
   } catch (err) {
     logger.error('Complete order error:', err);
     res.status(500).json({ code: 500, message: '订单完成失败' });

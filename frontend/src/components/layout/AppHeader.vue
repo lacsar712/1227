@@ -22,6 +22,7 @@
         <router-link to="/" class="nav-item">首页</router-link>
         <router-link to="/products" class="nav-item">商品</router-link>
         <router-link to="/brands" class="nav-item">品牌馆</router-link>
+        <router-link to="/points-mall" class="nav-item">积分商城</router-link>
         <template v-if="userStore.isLoggedIn">
           <router-link to="/cart" class="nav-item cart-link">
             <el-badge :value="cartCount" :max="99" :hidden="cartCount === 0">
@@ -43,6 +44,7 @@
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item command="profile">个人中心</el-dropdown-item>
+                <el-dropdown-item command="points">积分商城</el-dropdown-item>
                 <el-dropdown-item command="orders">我的订单</el-dropdown-item>
                 <el-dropdown-item command="address">收货地址</el-dropdown-item>
                 <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
@@ -110,6 +112,8 @@ function handleUserCommand(cmd) {
     router.push('/');
   } else if (cmd === 'profile') {
     router.push('/profile');
+  } else if (cmd === 'points') {
+    router.push('/points-mall');
   } else if (cmd === 'orders') {
     router.push('/orders');
   } else if (cmd === 'address') {

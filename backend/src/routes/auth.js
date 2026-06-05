@@ -6,6 +6,7 @@ const { User } = require('../models');
 const auth = require('../middleware/auth');
 const validate = require('../middleware/validate');
 const logger = require('../utils/logger');
+const pointsService = require('../utils/pointsService');
 
 const router = express.Router();
 
@@ -34,11 +35,21 @@ router.post(
       }
       const user = await User.create({ username, email, password, nickname: nickname || username });
       const token = generateToken(user.id);
+      
+      try {
+        await pointsService.processRegisterBonus(user.id);
+      } catch (pointsErr) {
+        logger.error('Register bonus error:', pointsErr);
+      }
+
+      const account = await pointsService.getAccount(user.id);
+      
       res.json({
         code: 0,
         data: {
           token,
-          user: { id: user.id, username: user.username, email: user.email, nickname: user.nickname }
+          user: { id: user.id, username: user.username, email: user.email, nickname: user.nickname },
+          points: account
         }
       });
     } catch (err) {
@@ -67,11 +78,20 @@ router.post(
         return res.status(400).json({ code: 400, message: '用户名或密码错误' });
       }
       const token = generateToken(user.id);
+      
+      let pointsAccount = null;
+      try {
+        pointsAccount = await pointsService.getAccount(user.id);
+      } catch (pointsErr) {
+        logger.error('Get points account error:', pointsErr);
+      }
+      
       res.json({
         code: 0,
         data: {
           token,
-          user: { id: user.id, username: user.username, email: user.email, nickname: user.nickname }
+          user: { id: user.id, username: user.username, email: user.email, nickname: user.nickname },
+          points: pointsAccount
         }
       });
     } catch (err) {
@@ -135,9 +155,24 @@ router.post(
 router.get('/me', auth, async (req, res) => {
   try {
     const u = req.user;
+    
+    let pointsAccount = null;
+    try {
+      pointsAccount = await pointsService.getAccount(u.id);
+    } catch (pointsErr) {
+      logger.error('Get points account error:', pointsErr);
+    }
+    
     res.json({
       code: 0,
-      data: { id: u.id, username: u.username, email: u.email, nickname: u.nickname, phone: u.phone }
+      data: { 
+        id: u.id, 
+        username: u.username, 
+        email: u.email, 
+        nickname: u.nickname, 
+        phone: u.phone,
+        points: pointsAccount
+      }
     });
   } catch (err) {
     logger.error('Get me error:', err);

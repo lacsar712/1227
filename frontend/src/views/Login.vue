@@ -64,7 +64,7 @@ async function submit() {
   loading.value = true;
   try {
     const data = await authApi.login(form);
-    userStore.setAuth(data.token, data.user);
+    userStore.setAuth(data.token, data.user, data.points);
     ElMessage.success('登录成功');
     router.push(route.query.redirect || '/');
   } finally {

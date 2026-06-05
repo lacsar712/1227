@@ -69,3 +69,12 @@ export const questionsApi = {
   create: (productId, data) => api.post(`/questions/product/${productId}`, data),
   answer: (id, data) => api.put(`/questions/${id}/answer`, data)
 };
+
+export const pointsApi = {
+  getAccount: () => api.get('/points/account'),
+  getTransactions: (params) => api.get('/points/transactions', { params }),
+  getProducts: (params) => api.get('/points/products', { params }),
+  getProductDetail: (id) => api.get(`/points/products/${id}`),
+  redeem: (productId) => api.post('/points/redeem', { product_id: productId }),
+  getRecords: (params) => api.get('/points/records', { params })
+};

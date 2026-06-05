@@ -11,6 +11,10 @@ const OrderItem = require('./OrderItem');
 const Notification = require('./Notification');
 const FlashSale = require('./FlashSale');
 const Question = require('./Question');
+const PointsAccount = require('./PointsAccount');
+const PointsTransaction = require('./PointsTransaction');
+const PointsProduct = require('./PointsProduct');
+const PointsRedeemRecord = require('./PointsRedeemRecord');
 
 User.hasMany(Address, { foreignKey: 'user_id' });
 Address.belongsTo(User, { foreignKey: 'user_id' });
@@ -50,6 +54,18 @@ Question.belongsTo(User, { foreignKey: 'user_id', attributes: ['id', 'username',
 Product.hasMany(Question, { foreignKey: 'product_id' });
 Question.belongsTo(Product, { foreignKey: 'product_id' });
 
+User.hasOne(PointsAccount, { foreignKey: 'user_id' });
+PointsAccount.belongsTo(User, { foreignKey: 'user_id' });
+
+User.hasMany(PointsTransaction, { foreignKey: 'user_id' });
+PointsTransaction.belongsTo(User, { foreignKey: 'user_id' });
+
+User.hasMany(PointsRedeemRecord, { foreignKey: 'user_id' });
+PointsRedeemRecord.belongsTo(User, { foreignKey: 'user_id' });
+
+PointsProduct.hasMany(PointsRedeemRecord, { foreignKey: 'points_product_id' });
+PointsRedeemRecord.belongsTo(PointsProduct, { foreignKey: 'points_product_id' });
+
 module.exports = {
   sequelize,
   User,
@@ -63,5 +79,9 @@ module.exports = {
   OrderItem,
   Notification,
   FlashSale,
-  Question
+  Question,
+  PointsAccount,
+  PointsTransaction,
+  PointsProduct,
+  PointsRedeemRecord
 };

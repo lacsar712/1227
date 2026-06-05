@@ -14,6 +14,7 @@ const ordersRoutes = require('./routes/orders');
 const notificationsRoutes = require('./routes/notifications');
 const { router: flashSalesRoutes } = require('./routes/flashSales');
 const questionsRoutes = require('./routes/questions');
+const pointsRoutes = require('./routes/points');
 
 const app = express();
 const PORT = process.env.PORT || 8227;
@@ -31,6 +32,7 @@ app.use('/api/orders', ordersRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/flash-sales', flashSalesRoutes);
 app.use('/api/questions', questionsRoutes);
+app.use('/api/points', pointsRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

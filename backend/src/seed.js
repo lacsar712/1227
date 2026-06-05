@@ -1,4 +1,4 @@
-const { User, Category, Brand, Product, FlashSale, sequelize } = require('./models');
+const { User, Category, Brand, Product, FlashSale, PointsProduct, sequelize } = require('./models');
 const logger = require('./utils/logger');
 
 const categories = [
@@ -275,6 +275,103 @@ const flashSales = [
   { product_idx: 5, name: '即将开抢-运动休闲鞋', sale_price: 149, stock: 25, hours_offset: [25, 27] }
 ];
 
+const pointsProducts = [
+  {
+    name: '10元优惠券',
+    description: '全场通用满100元可用，有效期30天',
+    type: 'coupon',
+    points_required: 100,
+    original_value: 10,
+    image: '/images/products/nut-gift-box.jpg',
+    stock: 1000,
+    sort_order: 1,
+    discount_type: 'fixed',
+    discount_value: 10,
+    expiry_days: 30
+  },
+  {
+    name: '20元优惠券',
+    description: '全场通用满200元可用，有效期30天',
+    type: 'coupon',
+    points_required: 200,
+    original_value: 20,
+    image: '/images/products/organic-oatmeal.jpg',
+    stock: 500,
+    sort_order: 2,
+    discount_type: 'fixed',
+    discount_value: 20,
+    expiry_days: 30
+  },
+  {
+    name: '50元优惠券',
+    description: '全场通用满500元可用，有效期30天',
+    type: 'coupon',
+    points_required: 500,
+    original_value: 50,
+    image: '/images/products/memory-pillow.jpg',
+    stock: 200,
+    sort_order: 3,
+    discount_type: 'fixed',
+    discount_value: 50,
+    expiry_days: 30
+  },
+  {
+    name: '9折优惠券',
+    description: '全场通用无门槛，有效期30天',
+    type: 'coupon',
+    points_required: 800,
+    original_value: 0,
+    image: '/images/products/face-mask.jpg',
+    stock: 300,
+    sort_order: 4,
+    discount_type: 'percentage',
+    discount_value: 10,
+    expiry_days: 30
+  },
+  {
+    name: '会员月度VIP',
+    description: '尊享会员专享价，专属客服，优先发货特权30天',
+    type: 'virtual',
+    points_required: 500,
+    original_value: 30,
+    image: '/images/products/smartwatch-pro.jpg',
+    stock: 999,
+    sort_order: 5,
+    expiry_days: 30
+  },
+  {
+    name: '免邮券',
+    description: '全场免运费一次，有效期30天',
+    type: 'virtual',
+    points_required: 80,
+    original_value: 15,
+    image: '/images/products/sports-shoes.jpg',
+    stock: 2000,
+    sort_order: 6,
+    expiry_days: 30
+  },
+  {
+    name: '限量定制马克杯',
+    description: '积分专享定制陶瓷马克杯',
+    type: 'physical',
+    points_required: 1000,
+    original_value: 59,
+    image: '/images/products/floor-lamp.jpg',
+    stock: 100,
+    sort_order: 7
+  },
+  {
+    name: '品牌帆布袋',
+    description: '环保帆布购物袋，时尚百搭',
+    type: 'physical',
+    points_required: 600,
+    original_value: 39,
+    image: '/images/products/cotton-tshirt.jpg',
+    stock: 300,
+    sort_order: 8
+  }
+];
+
 async function run() {
   try {
     const catCount = await Category.count();
@@ -367,6 +464,12 @@ async function run() {
         }
       }
       logger.info('Flash sales seed completed');
+    }
+
+    const ppCount = await PointsProduct.count();
+    if (ppCount === 0) {
+      await PointsProduct.bulkCreate(pointsProducts);
+      logger.info('Points products seed completed');
     }
 
     logger.info('Seed completed');

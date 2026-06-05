@@ -84,8 +84,12 @@ async function submit() {
       password: form.password,
       nickname: form.nickname || undefined
     });
-    userStore.setAuth(data.token, data.user);
-    ElMessage.success('注册成功');
+    userStore.setAuth(data.token, data.user, data.points);
+    if (data.points?.balance) {
+      ElMessage.success(`注册成功！获得 ${data.points.balance} 积分奖励`);
+    } else {
+      ElMessage.success('注册成功');
+    }
     router.push('/');
   } finally {
     loading.value = false;

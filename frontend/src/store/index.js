@@ -3,13 +3,15 @@ import { userModule } from '@/stores/user';
 import { cartModule } from '@/stores/cart';
 import { confirmModule } from '@/stores/confirm';
 import { notificationModule } from '@/stores/notification';
+import { pointsModule } from '@/stores/points';
 
 const store = createStore({
   modules: {
     user: userModule,
     cart: cartModule,
     confirm: confirmModule,
-    notification: notificationModule
+    notification: notificationModule,
+    points: pointsModule
   },
   plugins: [
     (store) => {
