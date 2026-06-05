@@ -68,7 +68,11 @@ async function submit() {
     const data = await authApi.login(form);
     userStore.setAuth(data.token, data.user, data.points);
     historyStore.syncIfNeeded();
-    ElMessage.success('登录成功');
+    if (data.pointsBonusIssued && data.points?.balance) {
+      ElMessage.success(`登录成功，获得 ${data.points.balance} 积分奖励`);
+    } else {
+      ElMessage.success('登录成功');
+    }
     router.push(route.query.redirect || '/');
   } finally {
     loading.value = false;

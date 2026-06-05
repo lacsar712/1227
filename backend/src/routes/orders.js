@@ -229,14 +229,43 @@ router.post('/:id/pay', async (req, res) => {
       return res.status(400).json({ code: 400, message: '订单已支付' });
     }
     await order.update({ payment_status: 'paid', status: 'paid' });
+    
+    let pointsResult = null;
+    try {
+      pointsResult = await pointsService.processOrderComplete(
+        req.user.id,
+        order.id,
+        order.total_amount
+      );
+    } catch (pointsErr) {
+      logger.error('Order payment points error:', pointsErr);
+    }
+    
     await createNotification(
       req.user.id,
       'order_paid',
       order.id,
       'order',
-      { orderNo: order.order_no, amount: order.total_amount }
+      { 
+        orderNo: order.order_no, 
+        amount: order.total_amount,
+        pointsEarned: pointsResult?.added || 0
+      }
     );
-    res.json({ code: 0, data: order, message: '支付成功' });
+    
+    const account = await pointsService.getAccount(req.user.id);
+    
+    res.json({ 
+      code: 0, 
+      data: { 
+        order, 
+        points: pointsResult,
+        account 
+      }, 
+      message: pointsResult?.added 
+        ? `支付成功，获得 ${pointsResult.added} 积分` 
+        : '支付成功' 
+    });
   } catch (err) {
     logger.error('Pay order error:', err);
     res.status(500).json({ code: 500, message: '支付失败' });
@@ -328,40 +357,23 @@ router.post('/:id/complete', async (req, res) => {
     }
     await order.update({ status: 'completed' });
     
-    let pointsResult = null;
-    try {
-      pointsResult = await pointsService.processOrderComplete(
-        req.user.id,
-        order.id,
-        order.total_amount
-      );
-    } catch (pointsErr) {
-      logger.error('Order points error:', pointsErr);
-    }
+    const account = await pointsService.getAccount(req.user.id);
     
     await createNotification(
       req.user.id,
       'order_completed',
       order.id,
       'order',
-      { 
-        orderNo: order.order_no,
-        pointsEarned: pointsResult?.added || 0
-      }
+      { orderNo: order.order_no }
     );
-    
-    const account = await pointsService.getAccount(req.user.id);
     
     res.json({ 
       code: 0, 
       data: { 
-        order, 
-        points: pointsResult,
+        order,
         account 
       }, 
-      message: pointsResult?.added 
-        ? `订单已完成，获得 ${pointsResult.added} 积分` 
-        : '订单已完成' 
+      message: '订单已完成' 
     });
   } catch (err) {
     logger.error('Complete order error:', err);

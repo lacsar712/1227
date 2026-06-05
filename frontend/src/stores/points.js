@@ -121,6 +121,7 @@ export function usePointsStore() {
   const fetchProducts = (params) => store.dispatch('points/fetchProducts', params);
   const redeemProduct = (productId) => store.dispatch('points/redeemProduct', productId);
   const fetchRecords = (params) => store.dispatch('points/fetchRecords', params);
+  const setAccount = (account) => store.commit('points/SET_ACCOUNT', account);
 
   return {
     account,
@@ -135,6 +136,7 @@ export function usePointsStore() {
     fetchTransactions,
     fetchProducts,
     redeemProduct,
-    fetchRecords
+    fetchRecords,
+    setAccount
   };
 }

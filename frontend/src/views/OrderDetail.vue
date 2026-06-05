@@ -55,8 +55,10 @@ import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { useConfirm } from '@/composables/useConfirm';
 import { ordersApi } from '@/api';
+import { usePointsStore } from '@/stores/points';
 
 const confirm = useConfirm();
+const pointsStore = usePointsStore();
 
 const route = useRoute();
 const router = useRouter();
@@ -83,8 +85,15 @@ onMounted(async () => {
 });
 
 async function pay() {
-  await ordersApi.pay(order.value.id);
-  ElMessage.success('支付成功');
+  const result = await ordersApi.pay(order.value.id);
+  if (result.points?.added) {
+    ElMessage.success(`支付成功，获得 ${result.points.added} 积分`);
+  } else {
+    ElMessage.success('支付成功');
+  }
+  if (result.account) {
+    pointsStore.setAccount(result.account);
+  }
   order.value = await ordersApi.detail(route.params.id);
 }
 
@@ -99,8 +108,11 @@ async function cancel() {
 async function complete() {
   const ok = await confirm({ title: '确认收货', message: '确认已收到商品？', type: 'success' });
   if (!ok) return;
-  await ordersApi.complete(order.value.id);
+  const result = await ordersApi.complete(order.value.id);
   ElMessage.success('已完成');
+  if (result.account) {
+    pointsStore.setAccount(result.account);
+  }
   order.value = await ordersApi.detail(route.params.id);
 }
 </script>

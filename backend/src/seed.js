@@ -1,4 +1,4 @@
-const { User, Category, Brand, Product, FlashSale, PointsProduct, Question, sequelize } = require('./models');
+const { User, Category, Brand, Product, FlashSale, PointsProduct, PointsAccount, PointsTransaction, sequelize } = require('./models');
 const logger = require('./utils/logger');
 
 const categories = [
@@ -428,24 +428,52 @@ async function run() {
 
       const admin = await User.findOne({ where: { username: 'admin' } });
       if (!admin) {
-        await User.create({
+        const newAdmin = await User.create({
           username: 'admin',
           email: 'admin@example.com',
           password: '123456',
           nickname: '管理员'
         });
-        logger.info('Admin user created');
+        await PointsAccount.create({
+          user_id: newAdmin.id,
+          balance: 100,
+          total_earned: 100,
+          total_spent: 0
+        });
+        await PointsTransaction.create({
+          user_id: newAdmin.id,
+          type: 'earn',
+          amount: 100,
+          balance_after: 100,
+          source_type: 'register',
+          description: '新用户注册奖励 100 积分'
+        });
+        logger.info('Admin user created with 100 bonus points');
       }
 
       const user = await User.findOne({ where: { username: 'user' } });
       if (!user) {
-        await User.create({
+        const newUser = await User.create({
           username: 'user',
           email: 'user@example.com',
           password: '123456',
           nickname: '测试用户'
         });
-        logger.info('Test user created');
+        await PointsAccount.create({
+          user_id: newUser.id,
+          balance: 100,
+          total_earned: 100,
+          total_spent: 0
+        });
+        await PointsTransaction.create({
+          user_id: newUser.id,
+          type: 'earn',
+          amount: 100,
+          balance_after: 100,
+          source_type: 'register',
+          description: '新用户注册奖励 100 积分'
+        });
+        logger.info('Test user created with 100 bonus points');
       }
 
       createdProducts = [];

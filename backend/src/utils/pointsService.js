@@ -145,6 +145,18 @@ function calculateOrderPoints(orderAmount) {
 }
 
 async function processRegisterBonus(userId) {
+  const existingTransaction = await PointsTransaction.findOne({
+    where: {
+      user_id: userId,
+      source_type: 'register',
+      type: 'earn'
+    }
+  });
+
+  if (existingTransaction) {
+    return { success: false, error: '注册奖励已发放', alreadyProcessed: true };
+  }
+
   return await addPoints(
     userId,
     CONFIG.REGISTER_BONUS,

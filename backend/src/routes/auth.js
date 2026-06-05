@@ -80,8 +80,16 @@ router.post(
       const token = generateToken(user.id);
       
       let pointsAccount = null;
+      let pointsBonusIssued = false;
       try {
         pointsAccount = await pointsService.getAccount(user.id);
+        if (pointsAccount.balance === 0 && pointsAccount.total_earned === 0) {
+          const bonusResult = await pointsService.processRegisterBonus(user.id);
+          if (bonusResult.success) {
+            pointsAccount = await pointsService.getAccount(user.id);
+            pointsBonusIssued = true;
+          }
+        }
       } catch (pointsErr) {
         logger.error('Get points account error:', pointsErr);
       }
@@ -91,7 +99,8 @@ router.post(
         data: {
           token,
           user: { id: user.id, username: user.username, email: user.email, nickname: user.nickname },
-          points: pointsAccount
+          points: pointsAccount,
+          pointsBonusIssued
         }
       });
     } catch (err) {
@@ -157,8 +166,16 @@ router.get('/me', auth, async (req, res) => {
     const u = req.user;
     
     let pointsAccount = null;
+    let pointsBonusIssued = false;
     try {
       pointsAccount = await pointsService.getAccount(u.id);
+      if (pointsAccount.balance === 0 && pointsAccount.total_earned === 0) {
+        const bonusResult = await pointsService.processRegisterBonus(u.id);
+        if (bonusResult.success) {
+          pointsAccount = await pointsService.getAccount(u.id);
+          pointsBonusIssued = true;
+        }
+      }
     } catch (pointsErr) {
       logger.error('Get points account error:', pointsErr);
     }
@@ -171,7 +188,8 @@ router.get('/me', auth, async (req, res) => {
         email: u.email, 
         nickname: u.nickname, 
         phone: u.phone,
-        points: pointsAccount
+        points: pointsAccount,
+        pointsBonusIssued
       }
     });
   } catch (err) {
