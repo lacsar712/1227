@@ -85,6 +85,8 @@ export const refundsApi = {
   getApplicableItems: (orderId) => api.get(`/refunds/order/${orderId}/applicable-items`),
   apply: (data) => api.post('/refunds/apply', data),
   cancel: (id) => api.post(`/refunds/${id}/cancel`),
+  approve: (id) => api.post(`/refunds/${id}/approve`),
+  reject: (id, data) => api.post(`/refunds/${id}/reject`, data),
   complete: (id) => api.post(`/refunds/${id}/complete`)
 };
 

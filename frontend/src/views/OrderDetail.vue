@@ -32,7 +32,6 @@
             <el-button type="danger" plain @click="cancel">取消订单</el-button>
           </div>
           <div class="actions" v-if="order.status === 'paid'">
-            <el-button type="primary" @click="ship">发货</el-button>
             <el-button type="danger" plain @click="cancel">取消订单</el-button>
           </div>
           <div class="actions" v-if="order.status === 'shipped'">
@@ -95,14 +94,6 @@ async function cancel() {
   await ordersApi.cancel(order.value.id);
   ElMessage.success('已取消');
   router.push('/orders');
-}
-
-async function ship() {
-  const ok = await confirm({ title: '确认发货', message: '确认已发货？', type: 'info' });
-  if (!ok) return;
-  await ordersApi.ship(order.value.id);
-  ElMessage.success('已发货');
-  order.value = await ordersApi.detail(route.params.id);
 }
 
 async function complete() {

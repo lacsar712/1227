@@ -200,6 +200,70 @@ router.post('/:id/cancel', async (req, res) => {
   }
 });
 
+router.post('/:id/approve', async (req, res) => {
+  try {
+    const refund = await Refund.findOne({
+      where: { id: req.params.id, user_id: req.user.id }
+    });
+    if (!refund) {
+      return res.status(404).json({ code: 404, message: '售后单不存在' });
+    }
+    if (refund.status !== 'pending') {
+      return res.status(400).json({ code: 400, message: '仅待处理的售后申请可审核' });
+    }
+
+    await refund.update({ status: 'approved', processed_at: new Date() });
+
+    await createNotification(
+      req.user.id,
+      'refund_approved',
+      refund.id,
+      'refund',
+      { refundNo: refund.refund_no }
+    );
+
+    res.json({ code: 0, data: refund, message: '售后审核通过' });
+  } catch (err) {
+    logger.error('Approve refund error:', err);
+    res.status(500).json({ code: 500, message: '审核失败' });
+  }
+});
+
+router.post(
+  '/:id/reject',
+  [body('reject_reason').isLength({ min: 2, max: 500 }).withMessage('请填写拒绝原因（2-500字）')],
+  validate,
+  async (req, res) => {
+    try {
+      const { reject_reason } = req.body;
+      const refund = await Refund.findOne({
+        where: { id: req.params.id, user_id: req.user.id }
+      });
+      if (!refund) {
+        return res.status(404).json({ code: 404, message: '售后单不存在' });
+      }
+      if (refund.status !== 'pending') {
+        return res.status(400).json({ code: 400, message: '仅待处理的售后申请可审核' });
+      }
+
+      await refund.update({ status: 'rejected', reject_reason, processed_at: new Date() });
+
+      await createNotification(
+        req.user.id,
+        'refund_rejected',
+        refund.id,
+        'refund',
+        { refundNo: refund.refund_no, rejectReason: reject_reason }
+      );
+
+      res.json({ code: 0, data: refund, message: '售后已拒绝' });
+    } catch (err) {
+      logger.error('Reject refund error:', err);
+      res.status(500).json({ code: 500, message: '拒绝失败' });
+    }
+  }
+);
+
 router.post('/:id/complete', async (req, res) => {
   try {
     const refund = await Refund.findOne({

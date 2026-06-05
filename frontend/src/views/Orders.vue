@@ -39,14 +39,6 @@
                 <el-button type="primary" size="small">去支付</el-button>
               </router-link>
               <el-button
-                v-if="order.status === 'paid'"
-                type="primary"
-                size="small"
-                @click="shipOrder(order.id)"
-              >
-                发货
-              </el-button>
-              <el-button
                 v-if="order.status === 'shipped'"
                 type="success"
                 size="small"
@@ -129,14 +121,6 @@ async function cancelOrder(id) {
   if (!ok) return;
   await ordersApi.cancel(id);
   ElMessage.success('已取消');
-  load();
-}
-
-async function shipOrder(id) {
-  const ok = await confirm({ title: '确认发货', message: '确认已发货？', type: 'info' });
-  if (!ok) return;
-  await ordersApi.ship(id);
-  ElMessage.success('已发货');
   load();
 }
 

@@ -40,6 +40,22 @@
             <div class="actions">
               <el-button
                 v-if="refund.status === 'pending'"
+                type="success"
+                size="small"
+                @click="approveRefund(refund.id)"
+              >
+                审核通过
+              </el-button>
+              <el-button
+                v-if="refund.status === 'pending'"
+                type="danger"
+                size="small"
+                @click="showRejectDialog(refund)"
+              >
+                审核拒绝
+              </el-button>
+              <el-button
+                v-if="refund.status === 'pending'"
                 type="danger"
                 plain
                 size="small"
@@ -73,6 +89,25 @@
         @current-change="load"
       />
     </div>
+
+    <el-dialog v-model="rejectDialogVisible" title="拒绝售后申请" width="400px">
+      <el-form :model="rejectForm" label-width="80px">
+        <el-form-item label="拒绝原因" prop="reject_reason" :rules="[{ required: true, message: '请填写拒绝原因', trigger: 'blur' }]">
+          <el-input
+            v-model="rejectForm.reject_reason"
+            type="textarea"
+            :rows="4"
+            placeholder="请填写拒绝原因..."
+            maxlength="500"
+            show-word-limit
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="rejectDialogVisible = false">取消</el-button>
+        <el-button type="danger" @click="submitReject">确认拒绝</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -90,6 +125,9 @@ const total = ref(0);
 const page = ref(1);
 const statusFilter = ref('');
 const placeholderImg = '/images/products/placeholder-80x80.png';
+const rejectDialogVisible = ref(false);
+const currentRejectRefund = ref(null);
+const rejectForm = ref({ reject_reason: '' });
 
 const typeText = {
   return: '退货',
@@ -139,6 +177,33 @@ async function completeRefund(id) {
   if (!ok) return;
   await refundsApi.complete(id);
   ElMessage.success('已完成');
+  load();
+}
+
+async function approveRefund(id) {
+  const ok = await confirm({ title: '审核通过', message: '确认审核通过该售后申请？', type: 'success' });
+  if (!ok) return;
+  await refundsApi.approve(id);
+  ElMessage.success('审核通过');
+  load();
+}
+
+function showRejectDialog(refund) {
+  currentRejectRefund.value = refund;
+  rejectForm.value = { reject_reason: '' };
+  rejectDialogVisible.value = true;
+}
+
+async function submitReject() {
+  if (!rejectForm.value.reject_reason.trim()) {
+    ElMessage.warning('请填写拒绝原因');
+    return;
+  }
+  const ok = await confirm({ title: '确认拒绝', message: '确认拒绝该售后申请？', type: 'warning' });
+  if (!ok) return;
+  await refundsApi.reject(currentRejectRefund.value.id, rejectForm.value);
+  rejectDialogVisible.value = false;
+  ElMessage.success('已拒绝');
   load();
 }
 </script>

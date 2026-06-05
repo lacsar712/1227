@@ -18,9 +18,11 @@
         <el-radio-button value="order_shipped">发货提醒</el-radio-button>
         <el-radio-button value="order_cancelled">订单取消</el-radio-button>
         <el-radio-button value="order_completed">订单完成</el-radio-button>
-        <el-radio-button value="after_sale">售后进度</el-radio-button>
         <el-radio-button value="refund_applied">售后申请</el-radio-button>
+        <el-radio-button value="refund_approved">审核通过</el-radio-button>
+        <el-radio-button value="refund_rejected">审核拒绝</el-radio-button>
         <el-radio-button value="refund_completed">售后完成</el-radio-button>
+        <el-radio-button value="refund_cancelled">售后取消</el-radio-button>
         <el-radio-button value="system">系统通知</el-radio-button>
       </el-radio-group>
       <el-radio-group v-model="readFilter" @change="load">
