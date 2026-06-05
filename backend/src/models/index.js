@@ -7,6 +7,7 @@ const CartItem = require('./CartItem');
 const Address = require('./Address');
 const Order = require('./Order');
 const OrderItem = require('./OrderItem');
+const Notification = require('./Notification');
 
 User.hasMany(Address, { foreignKey: 'user_id' });
 Address.belongsTo(User, { foreignKey: 'user_id' });
@@ -29,6 +30,9 @@ OrderItem.belongsTo(Order, { foreignKey: 'order_id' });
 OrderItem.belongsTo(Product, { foreignKey: 'product_id' });
 Order.belongsTo(Address, { foreignKey: 'address_id' });
 
+User.hasMany(Notification, { foreignKey: 'user_id' });
+Notification.belongsTo(User, { foreignKey: 'user_id' });
+
 module.exports = {
   sequelize,
   User,
@@ -38,5 +42,6 @@ module.exports = {
   CartItem,
   Address,
   Order,
-  OrderItem
+  OrderItem,
+  Notification
 };

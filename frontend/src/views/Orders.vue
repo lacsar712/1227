@@ -39,6 +39,22 @@
                 <el-button type="primary" size="small">去支付</el-button>
               </router-link>
               <el-button
+                v-if="order.status === 'paid'"
+                type="primary"
+                size="small"
+                @click="shipOrder(order.id)"
+              >
+                发货
+              </el-button>
+              <el-button
+                v-if="order.status === 'shipped'"
+                type="success"
+                size="small"
+                @click="completeOrder(order.id)"
+              >
+                确认收货
+              </el-button>
+              <el-button
                 v-if="['pending', 'paid'].includes(order.status)"
                 type="danger"
                 plain
@@ -115,6 +131,22 @@ async function cancelOrder(id) {
   ElMessage.success('已取消');
   load();
 }
+
+async function shipOrder(id) {
+  const ok = await confirm({ title: '确认发货', message: '确认已发货？', type: 'info' });
+  if (!ok) return;
+  await ordersApi.ship(id);
+  ElMessage.success('已发货');
+  load();
+}
+
+async function completeOrder(id) {
+  const ok = await confirm({ title: '确认收货', message: '确认已收到商品？', type: 'success' });
+  if (!ok) return;
+  await ordersApi.complete(id);
+  ElMessage.success('已完成');
+  load();
+}
 </script>
 
 <style scoped>
@@ -135,6 +167,7 @@ async function cancelOrder(id) {
 }
 .status.pending { color: #f59e0b; }
 .status.paid { color: #6366f1; }
+.status.shipped { color: #3b82f6; }
 .status.completed { color: #22c55e; }
 .status.cancelled { color: #94a3b8; }
 .order-body { padding: 16px 24px; }

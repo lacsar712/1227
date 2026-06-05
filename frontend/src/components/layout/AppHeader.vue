@@ -28,6 +28,11 @@
             </el-badge>
             <span>购物车</span>
           </router-link>
+          <router-link to="/notifications" class="nav-item notification-link">
+            <el-badge :value="unreadCount" :max="99" :hidden="unreadCount === 0" class="notification-badge">
+              <el-icon :size="22"><Bell /></el-icon>
+            </el-badge>
+          </router-link>
           <el-dropdown trigger="click" @command="handleUserCommand">
             <span class="user-dropdown">
               <el-avatar :size="32">{{ userStore.user?.nickname?.[0] || 'U' }}</el-avatar>
@@ -54,22 +59,38 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { Search, ShoppingBag, ShoppingCart, ArrowDown } from '@element-plus/icons-vue';
+import { Search, ShoppingBag, ShoppingCart, ArrowDown, Bell } from '@element-plus/icons-vue';
 import { useUserStore } from '@/stores/user';
 import { useCartStore } from '@/stores/cart';
+import { useNotificationStore } from '@/stores/notification';
 
 const router = useRouter();
 const userStore = useUserStore();
 const cartStore = useCartStore();
+const notificationStore = useNotificationStore();
 const cartCount = computed(() => cartStore.count?.value ?? 0);
+const unreadCount = computed(() => notificationStore.unreadCount?.value ?? 0);
 const keyword = ref('');
+let refreshTimer = null;
 
 onMounted(async () => {
   if (userStore.isLoggedIn) {
     await userStore.fetchUser();
     await cartStore.fetchCart();
+    await notificationStore.fetchUnreadCount();
+    refreshTimer = setInterval(async () => {
+      if (userStore.isLoggedIn) {
+        await notificationStore.fetchUnreadCount();
+      }
+    }, 30000);
+  }
+});
+
+onUnmounted(() => {
+  if (refreshTimer) {
+    clearInterval(refreshTimer);
   }
 });
 
@@ -153,6 +174,22 @@ function handleUserCommand(cmd) {
   display: flex;
   align-items: center;
   gap: 6px;
+}
+.notification-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+.notification-link:hover {
+  background: #f1f5f9;
+}
+.notification-badge {
+  --el-badge-content-bg: #ef4444;
 }
 .user-dropdown {
   display: flex;

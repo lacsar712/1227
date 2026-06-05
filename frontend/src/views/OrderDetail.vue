@@ -31,6 +31,13 @@
             <el-button type="primary" @click="pay">立即支付</el-button>
             <el-button type="danger" plain @click="cancel">取消订单</el-button>
           </div>
+          <div class="actions" v-if="order.status === 'paid'">
+            <el-button type="primary" @click="ship">发货</el-button>
+            <el-button type="danger" plain @click="cancel">取消订单</el-button>
+          </div>
+          <div class="actions" v-if="order.status === 'shipped'">
+            <el-button type="success" @click="complete">确认收货</el-button>
+          </div>
         </el-card>
       </div>
     </template>
@@ -84,13 +91,32 @@ async function cancel() {
   ElMessage.success('已取消');
   router.push('/orders');
 }
+
+async function ship() {
+  const ok = await confirm({ title: '确认发货', message: '确认已发货？', type: 'info' });
+  if (!ok) return;
+  await ordersApi.ship(order.value.id);
+  ElMessage.success('已发货');
+  order.value = await ordersApi.detail(route.params.id);
+}
+
+async function complete() {
+  const ok = await confirm({ title: '确认收货', message: '确认已收到商品？', type: 'success' });
+  if (!ok) return;
+  await ordersApi.complete(order.value.id);
+  ElMessage.success('已完成');
+  order.value = await ordersApi.detail(route.params.id);
+}
 </script>
 
 <style scoped>
 .order-detail { max-width: 720px; }
 .status { float: right; font-weight: 500; }
 .status.pending { color: #f59e0b; }
+.status.paid { color: #6366f1; }
+.status.shipped { color: #3b82f6; }
 .status.completed { color: #22c55e; }
+.status.cancelled { color: #94a3b8; }
 .addr-section h4, .items-section h4 { margin: 0 0 12px; font-size: 16px; }
 .addr-section p { margin: 4px 0; color: #64748b; }
 .item-row {

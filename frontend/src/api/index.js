@@ -38,5 +38,14 @@ export const ordersApi = {
   detail: (id) => api.get(`/orders/${id}`),
   create: (data) => api.post('/orders/create', data),
   pay: (id) => api.post(`/orders/${id}/pay`),
-  cancel: (id) => api.post(`/orders/${id}/cancel`)
+  cancel: (id) => api.post(`/orders/${id}/cancel`),
+  ship: (id) => api.post(`/orders/${id}/ship`),
+  complete: (id) => api.post(`/orders/${id}/complete`)
+};
+
+export const notificationsApi = {
+  list: (params) => api.get('/notifications', { params }),
+  unreadCount: () => api.get('/notifications/unread-count'),
+  markRead: (id) => api.post(`/notifications/${id}/read`),
+  markAllRead: () => api.post('/notifications/read-all')
 };

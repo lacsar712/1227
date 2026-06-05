@@ -11,6 +11,7 @@ const {
 const auth = require('../middleware/auth');
 const validate = require('../middleware/validate');
 const logger = require('../utils/logger');
+const { createNotification } = require('../utils/notificationService');
 
 const router = express.Router();
 router.use(auth);
@@ -168,6 +169,13 @@ router.post('/:id/pay', async (req, res) => {
       return res.status(400).json({ code: 400, message: '订单已支付' });
     }
     await order.update({ payment_status: 'paid', status: 'paid' });
+    await createNotification(
+      req.user.id,
+      'order_paid',
+      order.id,
+      'order',
+      { orderNo: order.order_no, amount: order.total_amount }
+    );
     res.json({ code: 0, data: order, message: '支付成功' });
   } catch (err) {
     logger.error('Pay order error:', err);
@@ -199,10 +207,69 @@ router.post('/:id/cancel', async (req, res) => {
         }
       }
     }
+    await createNotification(
+      req.user.id,
+      'order_cancelled',
+      order.id,
+      'order',
+      { orderNo: order.order_no }
+    );
     res.json({ code: 0, message: '订单已取消' });
   } catch (err) {
     logger.error('Cancel order error:', err);
     res.status(500).json({ code: 500, message: '取消失败' });
+  }
+});
+
+router.post('/:id/ship', async (req, res) => {
+  try {
+    const order = await Order.findOne({
+      where: { id: req.params.id, user_id: req.user.id }
+    });
+    if (!order) {
+      return res.status(404).json({ code: 404, message: '订单不存在' });
+    }
+    if (order.status !== 'paid') {
+      return res.status(400).json({ code: 400, message: '订单未支付，无法发货' });
+    }
+    await order.update({ status: 'shipped' });
+    await createNotification(
+      req.user.id,
+      'order_shipped',
+      order.id,
+      'order',
+      { orderNo: order.order_no }
+    );
+    res.json({ code: 0, data: order, message: '发货成功' });
+  } catch (err) {
+    logger.error('Ship order error:', err);
+    res.status(500).json({ code: 500, message: '发货失败' });
+  }
+});
+
+router.post('/:id/complete', async (req, res) => {
+  try {
+    const order = await Order.findOne({
+      where: { id: req.params.id, user_id: req.user.id }
+    });
+    if (!order) {
+      return res.status(404).json({ code: 404, message: '订单不存在' });
+    }
+    if (order.status !== 'shipped') {
+      return res.status(400).json({ code: 400, message: '订单未发货，无法完成' });
+    }
+    await order.update({ status: 'completed' });
+    await createNotification(
+      req.user.id,
+      'order_completed',
+      order.id,
+      'order',
+      { orderNo: order.order_no }
+    );
+    res.json({ code: 0, data: order, message: '订单已完成' });
+  } catch (err) {
+    logger.error('Complete order error:', err);
+    res.status(500).json({ code: 500, message: '订单完成失败' });
   }
 });
 

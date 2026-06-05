@@ -75,6 +75,12 @@ const routes = [
     name: 'OrderDetail',
     component: () => import('@/views/OrderDetail.vue'),
     meta: { title: '订单详情', auth: true }
+  },
+  {
+    path: '/notifications',
+    name: 'Notifications',
+    component: () => import('@/views/Notifications.vue'),
+    meta: { title: '消息通知', auth: true }
   }
 ];
 
