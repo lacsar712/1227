@@ -12,6 +12,15 @@
 
         <div class="section">
           <h4>选择商品</h4>
+          <el-alert
+            v-if="allItemsRefunded"
+            type="info"
+            :closable="false"
+            show-icon
+            title="该订单商品已全部申请售后"
+            description="您订单中的所有商品都已提交过售后申请，每个商品仅可申请一次售后。"
+            class="alert-tip"
+          />
           <div class="items-list">
             <div
               v-for="item in items"
@@ -84,9 +93,16 @@
           </el-form>
         </div>
 
-        <div class="actions" v-if="selectedItem">
+        <div class="actions" v-if="selectedItem || allItemsRefunded">
           <el-button @click="goBack">返回</el-button>
-          <el-button type="primary" :disabled="!canSubmit" @click="submit">提交申请</el-button>
+          <el-button
+            v-if="selectedItem"
+            type="primary"
+            :disabled="!canSubmit"
+            @click="submit"
+          >
+            提交申请
+          </el-button>
         </div>
       </el-card>
       <el-empty v-else-if="!loading" description="没有可申请售后的订单" />
@@ -122,6 +138,10 @@ const selectedItem = computed(() => {
 
 const canSubmit = computed(() => {
   return selectedItem.value && form.reason && form.type;
+});
+
+const allItemsRefunded = computed(() => {
+  return items.value.length > 0 && items.value.every((i) => i.has_refund);
 });
 
 onMounted(async () => {
@@ -241,5 +261,8 @@ async function submit() {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
+}
+.alert-tip {
+  margin-bottom: 16px;
 }
 </style>

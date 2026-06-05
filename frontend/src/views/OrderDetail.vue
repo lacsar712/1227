@@ -38,9 +38,16 @@
             <el-button type="success" @click="complete">确认收货</el-button>
           </div>
           <div class="actions" v-if="order.status === 'completed'">
-            <router-link :to="`/refund/apply?order_id=${order.id}`">
-              <el-button type="primary">申请售后</el-button>
-            </router-link>
+            <template v-if="hasRefundableItems">
+              <router-link :to="`/refund/apply?order_id=${order.id}`">
+                <el-button type="primary">申请售后</el-button>
+              </router-link>
+            </template>
+            <template v-else>
+              <el-tooltip content="该订单商品已全部申请售后">
+                <el-button type="primary" disabled>申请售后</el-button>
+              </el-tooltip>
+            </template>
           </div>
         </el-card>
       </div>
@@ -50,11 +57,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { useConfirm } from '@/composables/useConfirm';
-import { ordersApi } from '@/api';
+import { ordersApi, refundsApi } from '@/api';
 import { usePointsStore } from '@/stores/points';
 
 const confirm = useConfirm();
@@ -64,6 +71,7 @@ const route = useRoute();
 const router = useRouter();
 const loading = ref(true);
 const order = ref(null);
+const refundableItems = ref([]);
 const placeholderImg = '/images/products/placeholder-80x80.png';
 
 const statusText = {
@@ -74,9 +82,19 @@ const statusText = {
   cancelled: '已取消'
 };
 
+const hasRefundableItems = computed(() => refundableItems.value.length > 0);
+
 onMounted(async () => {
   try {
     order.value = await ordersApi.detail(route.params.id);
+    if (order.value && order.value.status === 'completed') {
+      try {
+        const res = await refundsApi.getApplicableItems(order.value.id);
+        refundableItems.value = (res.items || []).filter((i) => !i.has_refund);
+      } catch {
+        refundableItems.value = [];
+      }
+    }
   } catch {
     order.value = null;
   } finally {
