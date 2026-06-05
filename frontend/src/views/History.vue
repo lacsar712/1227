@@ -151,14 +151,12 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { ElMessage } from 'element-plus';
+import { ElMessage, ElMessageBox } from 'element-plus';
 import { Close, Clock } from '@element-plus/icons-vue';
 import { useHistoryStore } from '@/stores/history';
-import { useConfirm } from '@/composables/useConfirm';
 
 const router = useRouter();
 const historyStore = useHistoryStore();
-const confirm = useConfirm();
 
 const loading = ref(true);
 const placeholderImg = '/images/products/placeholder-600x600.png';
@@ -226,24 +224,30 @@ function goShopping() {
 
 async function handleRemove(item) {
   const productId = getProductId(item);
-  const ok = await confirm({
-    title: '移除足迹',
-    message: '确定要移除这条浏览记录吗？'
-  });
-  if (ok) {
+  try {
+    await ElMessageBox.confirm('确定要移除这条浏览记录吗？', '移除足迹', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    });
     await historyStore.remove(productId);
     ElMessage.success('已移除');
+  } catch {
+    // 用户取消
   }
 }
 
 async function handleClearAll() {
-  const ok = await confirm({
-    title: '清空足迹',
-    message: '确定要清空所有浏览记录吗？此操作不可恢复。'
-  });
-  if (ok) {
+  try {
+    await ElMessageBox.confirm('确定要清空所有浏览记录吗？此操作不可恢复。', '清空足迹', {
+      confirmButtonText: '确定清空',
+      cancelButtonText: '取消',
+      type: 'warning'
+    });
     await historyStore.clear();
     ElMessage.success('已清空浏览足迹');
+  } catch {
+    // 用户取消
   }
 }
 </script>
@@ -372,16 +376,18 @@ async function handleClearAll() {
   position: absolute;
   top: 8px;
   right: 8px;
-  width: 28px;
-  height: 28px;
+  z-index: 20;
+  width: 32px;
+  height: 32px;
   border: none;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.55);
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  pointer-events: auto;
   opacity: 0;
   transition: all 0.2s ease;
   padding: 0;

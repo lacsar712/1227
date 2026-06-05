@@ -92,12 +92,13 @@ router.post(
   [
     body('address_id').isInt().withMessage('请选择收货地址'),
     body('payment_method').isIn(['alipay', 'wechat', 'bank']).withMessage('请选择支付方式'),
-    body('remark').optional().trim()
+    body('remark').optional().trim(),
+    body('items').optional().isArray().withMessage('商品列表格式错误')
   ],
   validate,
   async (req, res) => {
     try {
-      const { address_id, payment_method, remark } = req.body;
+      const { address_id, payment_method, remark, items: directItems } = req.body;
       const address = await Address.findOne({
         where: { id: address_id, user_id: req.user.id }
       });
@@ -105,49 +106,69 @@ router.post(
         return res.status(400).json({ code: 400, message: '收货地址无效' });
       }
 
-      let cart = await Cart.findOne({ where: { user_id: req.user.id } });
-      if (!cart) {
-        return res.status(400).json({ code: 400, message: '购物车为空' });
-      }
-      const cartItems = await CartItem.findAll({
-        where: { cart_id: cart.id },
-        include: [Product]
-      });
-      if (!cartItems.length) {
-        return res.status(400).json({ code: 400, message: '购物车为空' });
+      let orderItemsInput = [];
+      let cart = null;
+      let cartItems = [];
+      let clearCartAfter = false;
+
+      if (Array.isArray(directItems) && directItems.length > 0) {
+        orderItemsInput = directItems;
+      } else {
+        cart = await Cart.findOne({ where: { user_id: req.user.id } });
+        if (!cart) {
+          return res.status(400).json({ code: 400, message: '购物车为空' });
+        }
+        cartItems = await CartItem.findAll({
+          where: { cart_id: cart.id },
+          include: [Product]
+        });
+        if (!cartItems.length) {
+          return res.status(400).json({ code: 400, message: '购物车为空' });
+        }
+        orderItemsInput = cartItems.map((ci) => ({
+          product_id: ci.product_id,
+          quantity: ci.quantity,
+          flash_sale_id: ci.flash_sale_id,
+          _cartItem: ci
+        }));
+        clearCartAfter = true;
       }
 
       const items = [];
       let totalAmount = 0;
       const flashSaleUpdates = [];
+      const productStockUpdates = [];
 
-      for (const ci of cartItems) {
-        if (!ci.Product) continue;
-        const product = ci.Product;
+      for (const input of orderItemsInput) {
+        const productId = input.product_id;
+        const quantity = parseInt(input.quantity, 10);
+        if (!productId || !quantity || quantity < 1) continue;
+
+        const product = await Product.findByPk(productId);
+        if (!product) continue;
+
         let price = parseFloat(product.price);
         let flashSale = null;
+        const flashSaleId = input.flash_sale_id;
 
-        if (ci.flash_sale_id) {
-          flashSale = await getActiveFlashSale(product.id, ci.flash_sale_id);
+        if (flashSaleId) {
+          flashSale = await getActiveFlashSale(product.id, flashSaleId);
           if (!flashSale) {
             return res.status(400).json({
               code: 400,
               message: `秒杀商品 ${product.name} 活动已结束或已售罄`
             });
           }
-          if (flashSale.stock < ci.quantity) {
+          if (flashSale.stock < quantity) {
             return res.status(400).json({
               code: 400,
               message: `秒杀商品 ${product.name} 库存不足`
             });
           }
           price = parseFloat(flashSale.sale_price);
-          flashSaleUpdates.push({
-            flashSale,
-            quantity: ci.quantity
-          });
+          flashSaleUpdates.push({ flashSale, quantity });
         } else {
-          if (product.stock < ci.quantity) {
+          if (product.stock < quantity) {
             return res.status(400).json({
               code: 400,
               message: `商品 ${product.name} 库存不足`
@@ -155,8 +176,7 @@ router.post(
           }
         }
 
-        const qty = ci.quantity;
-        const subtotal = price * qty;
+        const subtotal = price * quantity;
         totalAmount += subtotal;
         items.push({
           product_id: product.id,
@@ -164,9 +184,14 @@ router.post(
           product_name: product.name,
           product_image: product.image,
           price,
-          quantity: qty,
+          quantity,
           subtotal
         });
+        productStockUpdates.push({ product, quantity });
+      }
+
+      if (!items.length) {
+        return res.status(400).json({ code: 400, message: '无有效商品' });
       }
 
       const order = await Order.create({
@@ -185,16 +210,13 @@ router.post(
         });
       }
 
-      for (const ci of cartItems) {
-        const product = ci.Product;
-        if (product) {
-          const item = items.find((i) => i.product_id === product.id);
-          if (item) {
-            await product.update({
-              stock: product.stock - item.quantity,
-              sales_count: product.sales_count + item.quantity
-            });
-          }
+      for (const { product, quantity } of productStockUpdates) {
+        const item = items.find((i) => i.product_id === product.id);
+        if (item) {
+          await product.update({
+            stock: product.stock - quantity,
+            sales_count: product.sales_count + quantity
+          });
         }
       }
 
@@ -204,7 +226,9 @@ router.post(
         });
       }
 
-      await CartItem.destroy({ where: { cart_id: cart.id } });
+      if (clearCartAfter && cart) {
+        await CartItem.destroy({ where: { cart_id: cart.id } });
+      }
 
       const created = await Order.findByPk(order.id, {
         include: [Address, { model: OrderItem, as: 'OrderItems' }]

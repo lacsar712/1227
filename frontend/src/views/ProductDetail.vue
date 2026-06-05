@@ -263,9 +263,31 @@ function buyNow() {
     ElMessage.warning(flashSaleDisabledReason.value);
     return;
   }
-  addToCart().then(() => {
-    router.push('/checkout');
-  });
+  const flashSaleId = product.value.flash_sale ? product.value.flash_sale.id : null;
+  const directItem = {
+    id: `direct_${product.value.id}_${Date.now()}`,
+    product_id: product.value.id,
+    quantity: quantity.value,
+    flash_sale_id: flashSaleId,
+    price: flashSaleId ? product.value.flash_sale.sale_price : product.value.price,
+    effective_price: flashSaleId ? product.value.flash_sale.sale_price : product.value.price,
+    product: {
+      id: product.value.id,
+      name: product.value.name,
+      image: product.value.image,
+      price: product.value.price,
+      description: product.value.description,
+      stock: product.value.stock,
+      status: product.value.status
+    },
+    flash_sale: product.value.flash_sale || null
+  };
+  try {
+    sessionStorage.setItem('checkout_direct_items', JSON.stringify([directItem]));
+  } catch {
+    // ignore
+  }
+  router.push('/checkout');
 }
 </script>
 

@@ -97,16 +97,53 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { addressesApi, ordersApi } from '@/api';
 import { useCartStore } from '@/stores/cart';
 
+const DIRECT_ITEMS_KEY = 'checkout_direct_items';
+
+function loadDirectItems() {
+  try {
+    const raw = sessionStorage.getItem(DIRECT_ITEMS_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function clearDirectItems() {
+  try {
+    sessionStorage.removeItem(DIRECT_ITEMS_KEY);
+  } catch {
+    // ignore
+  }
+}
+
 const router = useRouter();
 const cartStore = useCartStore();
-const cartItems = computed(() => cartStore.items?.value ?? []);
-const cartTotal = computed(() => cartStore.total?.value ?? 0);
+
+const directItems = ref(loadDirectItems());
+const isDirectMode = computed(() => !!directItems.value && directItems.value.length > 0);
+
+const cartItems = computed(() => {
+  if (isDirectMode.value) return directItems.value;
+  return cartStore.items?.value ?? [];
+});
+const cartTotal = computed(() => {
+  if (isDirectMode.value) {
+    return directItems.value.reduce((sum, it) => {
+      const price = parseFloat(it.effective_price ?? it.price ?? 0);
+      return sum + price * (it.quantity ?? 1);
+    }, 0);
+  }
+  return cartStore.total?.value ?? 0;
+});
+
 const loading = ref(true);
 const submitting = ref(false);
 const addresses = ref([]);
@@ -131,16 +168,24 @@ const addrForm = reactive({
 });
 
 onMounted(async () => {
-  await cartStore.fetchCart();
+  if (!isDirectMode.value) {
+    await cartStore.fetchCart();
+  }
   if (!cartItems.value.length) {
-    ElMessage.warning('购物车为空');
-    router.push('/cart');
+    ElMessage.warning('没有可结算的商品');
+    router.push(isDirectMode.value ? '/products' : '/cart');
     return;
   }
   addresses.value = await addressesApi.list();
   const defaultAddr = addresses.value.find((a) => a.is_default);
   form.address_id = defaultAddr?.id || addresses.value[0]?.id;
   loading.value = false;
+});
+
+onUnmounted(() => {
+  if (!submitting.value) {
+    clearDirectItems();
+  }
 });
 
 async function saveAddress() {
@@ -169,8 +214,24 @@ async function submitOrder() {
   }
   submitting.value = true;
   try {
-    const order = await ordersApi.create(form);
-    await cartStore.fetchCart();
+    const payload = {
+      address_id: form.address_id,
+      payment_method: form.payment_method,
+      remark: form.remark
+    };
+    if (isDirectMode.value) {
+      payload.items = directItems.value.map((it) => ({
+        product_id: it.product_id,
+        quantity: it.quantity,
+        flash_sale_id: it.flash_sale_id || null
+      }));
+    }
+    const order = await ordersApi.create(payload);
+    if (isDirectMode.value) {
+      clearDirectItems();
+    } else {
+      await cartStore.fetchCart();
+    }
     ElMessage.success('订单创建成功');
     router.push(`/order/${order.id}`);
   } finally {
