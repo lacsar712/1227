@@ -106,7 +106,7 @@ const placeholderImg = '/images/products/placeholder-400x400.png';
 
 const filters = reactive({
   page: 1,
-  limit: 12,
+  limit: 4,
   sort: 'newest'
 });
 

@@ -68,7 +68,7 @@ const loading = ref(true);
 
 const filters = reactive({
   page: 1,
-  limit: 12
+  limit: 6
 });
 
 onMounted(() => {
