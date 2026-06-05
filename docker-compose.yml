@@ -23,6 +23,7 @@ services:
   backend:
     build: ./backend
     container_name: ecommerce-backend
+    restart: unless-stopped
     environment:
       NODE_ENV: production
       DB_HOST: db

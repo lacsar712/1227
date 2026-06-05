@@ -1,4 +1,4 @@
-const { User, Category, Brand, Product, FlashSale, PointsProduct, PointsAccount, PointsTransaction, sequelize } = require('./models');
+const { User, Category, Brand, Product, FlashSale, PointsProduct, PointsAccount, PointsTransaction, Question, sequelize } = require('./models');
 const logger = require('./utils/logger');
 
 const categories = [
