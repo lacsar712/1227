@@ -31,14 +31,37 @@
 
       <div v-loading="loading" class="content-area">
         <div v-if="!loading && activeTab === 'ongoing'">
-          <div v-if="ongoingList.length" class="sale-grid">
-            <FlashSaleCard
-              v-for="item in ongoingList"
-              :key="item.id"
-              :flash-sale="item"
-              @refresh="fetchData"
-            />
-          </div>
+          <template v-if="ongoingList.length || soldOutList.length">
+            <div v-if="ongoingList.length" class="sale-section">
+              <div class="section-label">
+                <span class="label-dot"></span>
+                <span>热抢中</span>
+              </div>
+              <div class="sale-grid">
+                <FlashSaleCard
+                  v-for="item in ongoingList"
+                  :key="item.id"
+                  :flash-sale="item"
+                  @refresh="fetchData"
+                />
+              </div>
+            </div>
+            <div v-if="soldOutList.length" class="sale-section sold-out-section">
+              <div class="section-label">
+                <span class="label-dot sold-out-dot"></span>
+                <span>已售罄</span>
+                <span class="label-hint">（活动仍在进行中，商品已抢光）</span>
+              </div>
+              <div class="sale-grid">
+                <FlashSaleCard
+                  v-for="item in soldOutList"
+                  :key="item.id"
+                  :flash-sale="item"
+                  @refresh="fetchData"
+                />
+              </div>
+            </div>
+          </template>
           <el-empty v-else description="暂无进行中的秒杀活动" />
         </div>
 
@@ -66,12 +89,14 @@ import FlashSaleCard from '@/components/ui/FlashSaleCard.vue';
 const activeTab = ref('ongoing');
 const loading = ref(true);
 const ongoingList = ref([]);
+const soldOutList = ref([]);
 const upcomingList = ref([]);
 
 async function fetchData() {
   try {
     const data = await flashSalesApi.list();
     ongoingList.value = data.ongoing || [];
+    soldOutList.value = data.sold_out || [];
     upcomingList.value = data.upcoming || [];
   } finally {
     loading.value = false;
@@ -172,6 +197,52 @@ onMounted(() => {
 .content-area {
   padding-top: 32px;
   min-height: 300px;
+}
+
+.sale-section {
+  margin-bottom: 32px;
+}
+
+.sale-section:last-child {
+  margin-bottom: 0;
+}
+
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.label-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ef4444, #f97316);
+  animation: pulse 2s infinite;
+}
+
+.label-dot.sold-out-dot {
+  background: #94a3b8;
+  animation: none;
+}
+
+.label-hint {
+  font-size: 13px;
+  font-weight: 400;
+  color: #94a3b8;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.sold-out-section .section-label {
+  color: #64748b;
 }
 
 .sale-grid {

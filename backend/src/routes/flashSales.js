@@ -7,15 +7,17 @@ const logger = require('../utils/logger');
 
 const router = express.Router();
 
-const getActiveFlashSale = async (productId, flashSaleId = null) => {
+const getActiveFlashSale = async (productId, flashSaleId = null, requireStock = true) => {
   const now = new Date();
   const where = {
     product_id: productId,
     status: 'active',
     start_time: { [Op.lte]: now },
-    end_time: { [Op.gt]: now },
-    stock: { [Op.gt]: 0 }
+    end_time: { [Op.gt]: now }
   };
+  if (requireStock) {
+    where.stock = { [Op.gt]: 0 };
+  }
   if (flashSaleId) {
     where.id = flashSaleId;
   }
@@ -32,7 +34,6 @@ router.get('/', async (req, res) => {
     if (type === 'ongoing') {
       where.start_time = { [Op.lte]: now };
       where.end_time = { [Op.gt]: now };
-      where.stock = { [Op.gt]: 0 };
     } else if (type === 'upcoming') {
       where.start_time = { [Op.gt]: now };
       where.end_time = { [Op.gt]: now };
@@ -49,6 +50,7 @@ router.get('/', async (req, res) => {
 
     const ongoing = [];
     const upcoming = [];
+    const soldOut = [];
 
     rows.forEach((fs) => {
       const item = {
@@ -68,8 +70,12 @@ router.get('/', async (req, res) => {
       const startTime = new Date(fs.start_time);
       const endTime = new Date(fs.end_time);
 
-      if (startTime <= now && endTime > now && fs.stock > 0) {
-        ongoing.push(item);
+      if (startTime <= now && endTime > now) {
+        if (fs.stock > 0) {
+          ongoing.push(item);
+        } else {
+          soldOut.push(item);
+        }
       } else if (startTime > now) {
         upcoming.push(item);
       }
@@ -77,7 +83,7 @@ router.get('/', async (req, res) => {
 
     res.json({
       code: 0,
-      data: { ongoing, upcoming }
+      data: { ongoing, sold_out: soldOut, upcoming }
     });
   } catch (err) {
     logger.error('Get flash sales error:', err);
@@ -94,14 +100,16 @@ router.get('/home', async (req, res) => {
       where: {
         status: 'active',
         start_time: { [Op.lte]: now },
-        end_time: { [Op.gt]: now },
-        stock: { [Op.gt]: 0 }
+        end_time: { [Op.gt]: now }
       },
       include: [{
         model: Product,
         attributes: ['id', 'name', 'price', 'original_price', 'image', 'stock']
       }],
-      order: [['start_time', 'ASC']],
+      order: [
+        ['stock', 'DESC'],
+        ['start_time', 'ASC']
+      ],
       limit: parseInt(limit, 10)
     });
 

@@ -5,15 +5,17 @@ const logger = require('../utils/logger');
 
 const router = express.Router();
 
-const getActiveFlashSale = async (productId, flashSaleId = null) => {
+const getActiveFlashSale = async (productId, flashSaleId = null, requireStock = true) => {
   const now = new Date();
   const where = {
     product_id: productId,
     status: 'active',
     start_time: { [Op.lte]: now },
-    end_time: { [Op.gt]: now },
-    stock: { [Op.gt]: 0 }
+    end_time: { [Op.gt]: now }
   };
+  if (requireStock) {
+    where.stock = { [Op.gt]: 0 };
+  }
   if (flashSaleId) {
     where.id = flashSaleId;
   }
@@ -25,7 +27,7 @@ const getActiveFlashSale = async (productId, flashSaleId = null) => {
 
 const enrichProductWithFlashSale = async (product) => {
   const p = product.toJSON ? product.toJSON() : { ...product };
-  const flashSale = await getActiveFlashSale(p.id);
+  const flashSale = await getActiveFlashSale(p.id, null, false);
   if (flashSale) {
     p.flash_sale = {
       id: flashSale.id,

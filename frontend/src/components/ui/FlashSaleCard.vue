@@ -1,11 +1,14 @@
 <template>
-  <div class="flash-sale-card" :class="{ 'is-upcoming': isUpcoming }">
+  <div class="flash-sale-card" :class="{ 'is-upcoming': isUpcoming, 'is-sold-out': isSoldOut }">
     <router-link :to="`/product/${flashSale.product_id}`" class="card-link">
       <div class="card-image">
         <img :src="flashSale.product?.image || placeholderImg" :alt="flashSale.name" />
         <div class="flash-badge" v-if="isOngoing">
           <span class="fire-icon">🔥</span>
           秒杀中
+        </div>
+        <div class="sold-out-badge" v-else-if="isSoldOut">
+          已售罄
         </div>
         <div class="upcoming-badge" v-else>
           即将开始
@@ -32,13 +35,21 @@
         </div>
         <div class="action-row">
           <el-button
-            type="danger"
+            :type="isUpcoming ? 'primary' : 'danger'"
             size="small"
             class="buy-btn"
-            :disabled="!isOngoing || flashSale.stock <= 0"
-            @click.stop="handleBuy"
+            :class="{ 'remind-btn': isUpcoming, 'reminded': isReminded }"
+            :disabled="isOngoing && flashSale.stock <= 0"
+            @click.stop="handleAction"
           >
-            {{ isOngoing ? (flashSale.stock > 0 ? '立即抢购' : '已售罄') : '提醒我' }}
+            <template v-if="isOngoing">
+              {{ flashSale.stock > 0 ? '立即抢购' : '已售罄' }}
+            </template>
+            <template v-else-if="isUpcoming">
+              <el-icon v-if="isReminded"><BellFilled /></el-icon>
+              <el-icon v-else><Bell /></el-icon>
+              {{ isReminded ? '已订阅' : '提醒我' }}
+            </template>
           </el-button>
         </div>
       </div>
@@ -47,8 +58,9 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { ElMessage } from 'element-plus';
+import { Bell, BellFilled } from '@element-plus/icons-vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 import { useCartStore } from '@/stores/cart';
@@ -78,6 +90,14 @@ const isOngoing = computed(() => {
 
 const isUpcoming = computed(() => startTime.value > Date.now());
 
+const isSoldOut = computed(() => {
+  const n = Date.now();
+  return startTime.value <= n && endTime.value > n && props.flashSale.stock <= 0;
+});
+
+const isReminded = ref(false);
+let reminderTimer = null;
+
 const discountPercent = computed(() => {
   const orig = props.flashSale.original_price || 0;
   const sale = props.flashSale.sale_price || 0;
@@ -93,6 +113,102 @@ const soldPercent = computed(() => {
 });
 
 const stockPercent = computed(() => 100 - soldPercent.value);
+
+const REMINDER_KEY = 'flash_sale_reminders';
+
+function getReminders() {
+  try {
+    return JSON.parse(localStorage.getItem(REMINDER_KEY) || '[]');
+  } catch {
+    return [];
+  }
+}
+
+function saveReminder(flashSaleId) {
+  const reminders = getReminders();
+  if (!reminders.includes(flashSaleId)) {
+    reminders.push(flashSaleId);
+    localStorage.setItem(REMINDER_KEY, JSON.stringify(reminders));
+  }
+}
+
+function removeReminder(flashSaleId) {
+  const reminders = getReminders().filter(id => id !== flashSaleId);
+  localStorage.setItem(REMINDER_KEY, JSON.stringify(reminders));
+}
+
+function setupReminder() {
+  if (!isUpcoming.value) return;
+
+  const delay = startTime.value - Date.now();
+  if (delay <= 0) return;
+
+  reminderTimer = setTimeout(() => {
+    if (Notification.permission === 'granted') {
+      new Notification('秒杀活动开始啦！', {
+        body: `${props.flashSale.name} 秒杀活动已开始，快来抢购吧！`,
+        icon: '/favicon.svg'
+      });
+    }
+    ElMessage({
+      message: `🔥 ${props.flashSale.name} 秒杀活动开始啦！`,
+      type: 'success',
+      duration: 5000,
+      showClose: true
+    });
+    isReminded.value = false;
+    removeReminder(props.flashSale.id);
+    emit('refresh');
+  }, delay);
+}
+
+function clearReminderTimer() {
+  if (reminderTimer) {
+    clearTimeout(reminderTimer);
+    reminderTimer = null;
+  }
+}
+
+async function handleAction() {
+  if (isUpcoming.value) {
+    if (!userStore.isLoggedIn) {
+      router.push('/login');
+      return;
+    }
+
+    if (isReminded.value) {
+      isReminded.value = false;
+      removeReminder(props.flashSale.id);
+      clearReminderTimer();
+      ElMessage.info('已取消提醒');
+      return;
+    }
+
+    try {
+      if (Notification.permission === 'default') {
+        await Notification.requestPermission();
+      }
+    } catch (e) {
+      // ignore
+    }
+
+    isReminded.value = true;
+    saveReminder(props.flashSale.id);
+    setupReminder();
+
+    const startDate = new Date(startTime.value);
+    const timeStr = startDate.toLocaleString('zh-CN', {
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    ElMessage.success(`已订阅提醒，${timeStr} 将通知您`);
+    return;
+  }
+
+  await handleBuy();
+}
 
 function handleEnd() {
   emit('refresh');
@@ -121,6 +237,27 @@ async function handleBuy() {
     // error handled by interceptor
   }
 }
+
+onMounted(() => {
+  const reminders = getReminders();
+  isReminded.value = reminders.includes(props.flashSale.id);
+  if (isReminded.value && isUpcoming.value) {
+    setupReminder();
+  }
+});
+
+onUnmounted(() => {
+  clearReminderTimer();
+});
+
+watch(() => props.flashSale.id, () => {
+  const reminders = getReminders();
+  isReminded.value = reminders.includes(props.flashSale.id);
+  clearReminderTimer();
+  if (isReminded.value && isUpcoming.value) {
+    setupReminder();
+  }
+});
 </script>
 
 <style scoped>
@@ -283,6 +420,51 @@ async function handleBuy() {
   font-weight: 600;
 }
 
+.buy-btn.remind-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.buy-btn.reminded {
+  background: linear-gradient(135deg, #10b981, #059669) !important;
+  border: none !important;
+}
+
+.flash-sale-card.is-sold-out {
+  opacity: 0.8;
+}
+
+.flash-sale-card.is-sold-out .card-image::after {
+  content: '已售罄';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 4px;
+}
+
+.sold-out-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: linear-gradient(135deg, #64748b, #475569);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 4px;
+}
+
 .is-upcoming .sale-price {
   color: #6366f1;
 }
@@ -293,5 +475,17 @@ async function handleBuy() {
 
 .is-upcoming .stock-text {
   color: #6366f1;
+}
+
+.is-sold-out .sale-price {
+  color: #94a3b8;
+}
+
+.is-sold-out .stock-progress {
+  background: #94a3b8;
+}
+
+.is-sold-out .stock-text {
+  color: #94a3b8;
 }
 </style>

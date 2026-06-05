@@ -41,10 +41,17 @@
             <div v-for="item in cartItems" :key="item.id" class="order-item">
               <img :src="item.product?.image || placeholderImg" :alt="item.product?.name" />
               <div class="item-info">
-                <div class="name">{{ item.product?.name }}</div>
-                <div class="meta">¥{{ item.product?.price }} × {{ item.quantity }}</div>
+                <div class="name">
+                {{ item.product?.name }}
+                <span class="flash-tag" v-if="item.flash_sale">限时秒杀</span>
+                </div>
+                <div class="meta">
+                  <span class="current-price">¥{{ item.effective_price }}</span>
+                  <span class="orig-price" v-if="item.flash_sale && item.effective_price < item.product?.price">¥{{ item.product?.price }}</span>
+                  <span> × {{ item.quantity }}</span>
+                </div>
               </div>
-              <div class="subtotal">¥{{ ((item.product?.price || 0) * item.quantity).toFixed(2) }}</div>
+              <div class="subtotal">¥{{ ((item.effective_price || 0) * item.quantity).toFixed(2) }}</div>
             </div>
           </div>
           <el-input v-model="form.remark" placeholder="订单备注（选填）" type="textarea" :rows="2" class="remark" />
@@ -197,8 +204,35 @@ async function submitOrder() {
   border-bottom: 1px solid #f1f5f9;
 }
 .order-item img { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; }
-.item-info .name { font-weight: 500; }
-.item-info .meta { font-size: 13px; color: #64748b; }
+.item-info .name {
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.flash-tag {
+  background: linear-gradient(135deg, #ef4444, #f97316);
+  color: #fff;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: 500;
+}
+.item-info .meta {
+  font-size: 13px;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.current-price {
+  color: #ef4444;
+  font-weight: 600;
+}
+.orig-price {
+  color: #94a3b8;
+  text-decoration: line-through;
+  font-size: 12px;
+}
 .subtotal { margin-left: auto; font-weight: 600; }
 .remark { margin-top: 12px; }
 .submit-bar {
