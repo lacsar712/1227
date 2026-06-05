@@ -42,7 +42,7 @@
           <h4>选择售后类型</h4>
           <el-radio-group v-model="form.type" class="type-group">
             <el-radio-button value="return">
-              <el-icon><Refund /></el-icon>
+              <el-icon><Service /></el-icon>
               <span>退货退款</span>
             </el-radio-button>
             <el-radio-button value="exchange">
@@ -98,7 +98,7 @@
 import { ref, reactive, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
-import { Refund, RefreshRight } from '@element-plus/icons-vue';
+import { Service, RefreshRight } from '@element-plus/icons-vue';
 import { refundsApi } from '@/api';
 
 const route = useRoute();

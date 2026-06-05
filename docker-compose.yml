@@ -14,10 +14,11 @@ services:
     ports:
       - "3307:3306"   # 主机 3307 映射到容器 3306，避免与本地 MySQL 冲突
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
       interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 30
+      start_period: 90s
 
   backend:
     build: ./backend

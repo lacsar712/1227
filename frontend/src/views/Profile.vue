@@ -33,7 +33,7 @@
           <span>购物车</span>
         </router-link>
         <router-link to="/points-mall" class="link-item">
-          <el-icon :size="24"><Gift /></el-icon>
+          <el-icon :size="24"><Present /></el-icon>
           <span>积分商城</span>
         </router-link>
       </div>
@@ -157,7 +157,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { Document, Location, ShoppingCart, Gift, Wallet, ArrowRight, TrendCharts, Minus, Clock, Calendar, Calendar as CalendarIcon, CircleCheck } from '@element-plus/icons-vue';
+import { Document, Location, ShoppingCart, Present, Wallet, ArrowRight, TrendCharts, Minus, Clock, Calendar, Calendar as CalendarIcon, CircleCheck } from '@element-plus/icons-vue';
 import { useUserStore } from '@/stores/user';
 import { usePointsStore } from '@/stores/points';
 import { useCheckInStore } from '@/stores/checkIn';

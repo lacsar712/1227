@@ -85,7 +85,7 @@ import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import {
   Wallet,
-  Truck,
+  Van,
   Close,
   CircleCheck,
   Service,
@@ -111,7 +111,7 @@ const unreadCount = computed(() => notificationStore.unreadCount?.value ?? 0);
 
 const notificationIcons = {
   order_paid: Wallet,
-  order_shipped: Truck,
+  order_shipped: Van,
   order_cancelled: Close,
   order_completed: CircleCheck,
   after_sale: Service,
