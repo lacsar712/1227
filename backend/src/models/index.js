@@ -1,6 +1,7 @@
 const sequelize = require('../config/database');
 const User = require('./User');
 const Category = require('./Category');
+const Brand = require('./Brand');
 const Product = require('./Product');
 const Cart = require('./Cart');
 const CartItem = require('./CartItem');
@@ -21,6 +22,9 @@ Order.belongsTo(User, { foreignKey: 'user_id' });
 
 Category.hasMany(Product, { foreignKey: 'category_id' });
 Product.belongsTo(Category, { foreignKey: 'category_id' });
+
+Brand.hasMany(Product, { foreignKey: 'brand_id' });
+Product.belongsTo(Brand, { foreignKey: 'brand_id' });
 
 Product.hasMany(FlashSale, { foreignKey: 'product_id' });
 FlashSale.belongsTo(Product, { foreignKey: 'product_id' });
@@ -43,6 +47,7 @@ module.exports = {
   sequelize,
   User,
   Category,
+  Brand,
   Product,
   Cart,
   CartItem,

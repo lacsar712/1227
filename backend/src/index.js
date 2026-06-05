@@ -6,6 +6,7 @@ const logger = require('./utils/logger');
 
 const authRoutes = require('./routes/auth');
 const categoriesRoutes = require('./routes/categories');
+const brandsRoutes = require('./routes/brands');
 const productsRoutes = require('./routes/products');
 const cartRoutes = require('./routes/cart');
 const addressesRoutes = require('./routes/addresses');
@@ -21,6 +22,7 @@ app.use(express.json());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/categories', categoriesRoutes);
+app.use('/api/brands', brandsRoutes);
 app.use('/api/products', productsRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/addresses', addressesRoutes);

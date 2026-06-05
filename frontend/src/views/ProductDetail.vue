@@ -11,6 +11,20 @@
         </div>
         <div class="info">
           <h1>{{ product.name }}</h1>
+          <router-link
+            v-if="product.Brand"
+            :to="`/brand/${product.Brand.slug}`"
+            class="brand-link"
+          >
+            <div class="brand-info">
+              <div class="brand-mini-logo">
+                <span v-if="!product.Brand.logo">{{ product.Brand.name[0] }}</span>
+                <img v-else :src="product.Brand.logo" :alt="product.Brand.name" />
+              </div>
+              <span class="brand-name">{{ product.Brand.name }}</span>
+              <el-icon class="arrow-icon"><ArrowRight /></el-icon>
+            </div>
+          </router-link>
           <p class="desc">{{ product.description }}</p>
 
           <div class="flash-sale-box" v-if="product.flash_sale">
@@ -103,7 +117,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
-import { ShoppingCart } from '@element-plus/icons-vue';
+import { ShoppingCart, ArrowRight } from '@element-plus/icons-vue';
 import { productsApi } from '@/api';
 import { useUserStore } from '@/stores/user';
 import { useCartStore } from '@/stores/cart';
@@ -254,8 +268,70 @@ function buyNow() {
 .info h1 {
   font-size: 24px;
   font-weight: 600;
-  margin: 0 0 16px;
+  margin: 0 0 12px;
 }
+
+.brand-link {
+  display: inline-block;
+  margin-bottom: 16px;
+}
+
+.brand-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px 8px 8px;
+  background: linear-gradient(135deg, #f0f4ff 0%, #faf5ff 100%);
+  border-radius: 24px;
+  transition: all 0.2s ease;
+}
+
+.brand-info:hover {
+  background: linear-gradient(135deg, #e0e7ff 0%, #f3e8ff 100%);
+  transform: translateX(2px);
+}
+
+.brand-mini-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-primary), #8b5cf6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.brand-mini-logo span {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.brand-mini-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.brand-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.arrow-icon {
+  color: var(--color-primary);
+  font-size: 14px;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.brand-info:hover .arrow-icon {
+  opacity: 1;
+}
+
 .desc {
   color: #64748b;
   line-height: 1.6;

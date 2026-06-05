@@ -12,6 +12,13 @@ export const categoriesApi = {
   list: () => api.get('/categories')
 };
 
+export const brandsApi = {
+  list: (params) => api.get('/brands', { params }),
+  all: () => api.get('/brands/all'),
+  detail: (slug) => api.get(`/brands/${slug}`),
+  products: (slug, params) => api.get(`/brands/${slug}/products`, { params })
+};
+
 export const productsApi = {
   list: (params) => api.get('/products', { params }),
   detail: (id) => api.get(`/products/${id}`)

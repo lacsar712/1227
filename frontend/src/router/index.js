@@ -87,6 +87,18 @@ const routes = [
     name: 'FlashSale',
     component: () => import('@/views/FlashSale.vue'),
     meta: { title: '限时秒杀' }
+  },
+  {
+    path: '/brands',
+    name: 'Brands',
+    component: () => import('@/views/Brands.vue'),
+    meta: { title: '品牌馆' }
+  },
+  {
+    path: '/brand/:slug',
+    name: 'BrandDetail',
+    component: () => import('@/views/BrandDetail.vue'),
+    meta: { title: '品牌详情' }
   }
 ];
 

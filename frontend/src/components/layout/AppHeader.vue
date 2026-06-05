@@ -21,6 +21,7 @@
       <nav class="nav-links">
         <router-link to="/" class="nav-item">首页</router-link>
         <router-link to="/products" class="nav-item">商品</router-link>
+        <router-link to="/brands" class="nav-item">品牌馆</router-link>
         <template v-if="userStore.isLoggedIn">
           <router-link to="/cart" class="nav-item cart-link">
             <el-badge :value="cartCount" :max="99" :hidden="cartCount === 0">

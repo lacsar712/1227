@@ -13,6 +13,10 @@ const Product = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false
     },
+    brand_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
     name: {
       type: DataTypes.STRING(200),
       allowNull: false

@@ -1,6 +1,6 @@
 const express = require('express');
 const { Op } = require('sequelize');
-const { Product, Category, FlashSale } = require('../models');
+const { Product, Category, Brand, FlashSale } = require('../models');
 const logger = require('../utils/logger');
 
 const router = express.Router();
@@ -53,6 +53,7 @@ router.get('/', async (req, res) => {
       limit = 12,
       keyword = '',
       category_id,
+      brand_id,
       sort = 'newest',
       min_price,
       max_price
@@ -67,6 +68,7 @@ router.get('/', async (req, res) => {
       ];
     }
     if (category_id) where.category_id = category_id;
+    if (brand_id) where.brand_id = brand_id;
     if (min_price) where.price = { ...where.price, [Op.gte]: parseFloat(min_price) };
     if (max_price) where.price = { ...where.price, [Op.lte]: parseFloat(max_price) };
 
@@ -78,7 +80,10 @@ router.get('/', async (req, res) => {
 
     const { count, rows } = await Product.findAndCountAll({
       where,
-      include: [{ model: Category, attributes: ['id', 'name', 'slug'] }],
+      include: [
+        { model: Category, attributes: ['id', 'name', 'slug'] },
+        { model: Brand, attributes: ['id', 'name', 'slug', 'logo'] }
+      ],
       order,
       limit: parseInt(limit, 10),
       offset,
@@ -91,7 +96,8 @@ router.get('/', async (req, res) => {
         'image',
         'stock',
         'sales_count',
-        'category_id'
+        'category_id',
+        'brand_id'
       ]
     });
 
@@ -118,7 +124,10 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const product = await Product.findByPk(req.params.id, {
-      include: [{ model: Category, attributes: ['id', 'name', 'slug'] }]
+      include: [
+        { model: Category, attributes: ['id', 'name', 'slug'] },
+        { model: Brand, attributes: ['id', 'name', 'slug', 'logo', 'description'] }
+      ]
     });
     if (!product || product.status !== 'active') {
       return res.status(404).json({ code: 404, message: '商品不存在' });
