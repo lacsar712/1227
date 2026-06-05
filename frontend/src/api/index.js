@@ -87,3 +87,11 @@ export const refundsApi = {
   cancel: (id) => api.post(`/refunds/${id}/cancel`),
   complete: (id) => api.post(`/refunds/${id}/complete`)
 };
+
+export const browseHistoryApi = {
+  list: () => api.get('/browse-history'),
+  add: (productId) => api.post('/browse-history/add', { product_id: productId }),
+  remove: (productId) => api.delete(`/browse-history/${productId}`),
+  clear: () => api.delete('/browse-history'),
+  sync: (items) => api.post('/browse-history/sync', { items })
+};

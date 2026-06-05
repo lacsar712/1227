@@ -16,6 +16,10 @@
           <el-icon :size="24"><Document /></el-icon>
           <span>我的订单</span>
         </router-link>
+        <router-link to="/history" class="link-item">
+          <el-icon :size="24"><Clock /></el-icon>
+          <span>我的足迹</span>
+        </router-link>
         <router-link to="/profile/address" class="link-item">
           <el-icon :size="24"><Location /></el-icon>
           <span>收货地址</span>
@@ -122,7 +126,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { Document, Location, ShoppingCart, Gift, Wallet, ArrowRight, TrendCharts, Minus } from '@element-plus/icons-vue';
+import { Document, Location, ShoppingCart, Gift, Wallet, ArrowRight, TrendCharts, Minus, Clock } from '@element-plus/icons-vue';
 import { useUserStore } from '@/stores/user';
 import { usePointsStore } from '@/stores/points';
 
@@ -181,7 +185,7 @@ onMounted(() => {
 
 .quick-links {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 16px;
 }
 
@@ -401,7 +405,7 @@ onMounted(() => {
 
 @media (max-width: 600px) {
   .quick-links {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
   }
 
   .points-balance-section {

@@ -83,6 +83,12 @@ const routes = [
     meta: { title: '消息通知', auth: true }
   },
   {
+    path: '/history',
+    name: 'History',
+    component: () => import('@/views/History.vue'),
+    meta: { title: '我的足迹' }
+  },
+  {
     path: '/flash-sale',
     name: 'FlashSale',
     component: () => import('@/views/FlashSale.vue'),

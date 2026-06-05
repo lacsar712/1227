@@ -35,11 +35,13 @@ import { User, Lock } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import { authApi } from '@/api';
 import { useUserStore } from '@/stores/user';
+import { useHistoryStore } from '@/stores/history';
 import { z } from 'zod';
 
 const router = useRouter();
 const route = useRoute();
 const userStore = useUserStore();
+const historyStore = useHistoryStore();
 const formRef = ref();
 const loading = ref(false);
 
@@ -65,6 +67,7 @@ async function submit() {
   try {
     const data = await authApi.login(form);
     userStore.setAuth(data.token, data.user, data.points);
+    historyStore.syncIfNeeded();
     ElMessage.success('登录成功');
     router.push(route.query.redirect || '/');
   } finally {

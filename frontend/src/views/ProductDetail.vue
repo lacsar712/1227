@@ -146,6 +146,7 @@ import { ShoppingCart, ArrowRight } from '@element-plus/icons-vue';
 import { productsApi } from '@/api';
 import { useUserStore } from '@/stores/user';
 import { useCartStore } from '@/stores/cart';
+import { useHistoryStore } from '@/stores/history';
 import CountdownTimer from '@/components/ui/CountdownTimer.vue';
 import ProductQA from '@/components/ui/ProductQA.vue';
 
@@ -155,6 +156,7 @@ const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
 const cartStore = useCartStore();
+const historyStore = useHistoryStore();
 
 const product = ref(null);
 const loading = ref(true);
@@ -213,6 +215,9 @@ async function refreshFlashSale() {
 onMounted(async () => {
   try {
     product.value = await productsApi.detail(route.params.id);
+    if (product.value) {
+      historyStore.add(product.value);
+    }
   } catch {
     product.value = null;
   } finally {
