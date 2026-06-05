@@ -4,31 +4,91 @@
       <div class="product-detail">
         <div class="gallery">
           <img :src="product.image || placeholderImg" :alt="product.name" />
+          <div class="flash-tag" v-if="product.flash_sale">
+            <span class="fire">🔥</span>
+            限时秒杀中
+          </div>
         </div>
         <div class="info">
           <h1>{{ product.name }}</h1>
           <p class="desc">{{ product.description }}</p>
-          <div class="price-box">
+
+          <div class="flash-sale-box" v-if="product.flash_sale">
+            <div class="flash-header">
+              <span class="flash-label">限时秒杀</span>
+              <CountdownTimer
+                :target-time="product.flash_sale.end_time"
+                prefix="距结束"
+                :show-days="false"
+                @end="refreshFlashSale"
+              />
+            </div>
+            <div class="flash-price-box">
+              <span class="flash-price">¥{{ product.flash_sale.sale_price }}</span>
+              <span class="flash-orig">¥{{ product.price }}</span>
+              <span class="flash-discount">
+                省{{ Math.round((1 - product.flash_sale.sale_price / product.price) * 100) }}%
+              </span>
+            </div>
+            <div class="flash-stock-row">
+              <div class="flash-stock-bar">
+                <div class="flash-stock-progress" :style="{ width: flashStockPercent + '%' }"></div>
+              </div>
+              <span class="flash-stock-text">
+                已抢 {{ flashSoldPercent }}% · 仅剩 {{ product.flash_sale.stock }} 件
+              </span>
+            </div>
+            <el-alert type="warning" show-icon :closable="false" class="flash-alert">
+              秒杀商品数量有限，每个账号限购 1 件
+            </el-alert>
+          </div>
+
+          <div class="price-box" v-else>
             <span class="price">¥{{ product.price }}</span>
             <span class="orig" v-if="product.original_price">¥{{ product.original_price }}</span>
             <span class="discount" v-if="product.original_price">
               省{{ Math.round((1 - product.price / product.original_price) * 100) }}%
             </span>
           </div>
+
           <div class="meta">已售 {{ product.sales_count || 0 }} 件 · 库存 {{ product.stock }} 件</div>
           <div class="quantity-row">
             <span>数量</span>
-            <el-input-number v-model="quantity" :min="1" :max="product.stock" />
+            <el-input-number
+              v-model="quantity"
+              :min="1"
+              :max="maxQuantity"
+              :disabled="isFlashSaleDisabled"
+            />
           </div>
           <div class="actions">
-            <el-button type="primary" size="large" @click="addToCart" :disabled="!userStore.isLoggedIn">
+            <el-button
+              type="primary"
+              size="large"
+              :class="{ 'flash-btn': product.flash_sale }"
+              @click="addToCart"
+              :disabled="!userStore.isLoggedIn || isFlashSaleDisabled"
+            >
               <el-icon><ShoppingCart /></el-icon>
-              加入购物车
+              {{ product.flash_sale ? '立即抢购' : '加入购物车' }}
             </el-button>
-            <el-button size="large" @click="buyNow" :disabled="!userStore.isLoggedIn">
+            <el-button
+              size="large"
+              @click="buyNow"
+              :disabled="!userStore.isLoggedIn || isFlashSaleDisabled"
+            >
               立即购买
             </el-button>
           </div>
+          <el-alert
+            v-if="product.flash_sale && isFlashSaleDisabled"
+            type="error"
+            show-icon
+            :closable="false"
+            style="margin-top: 16px"
+          >
+            {{ flashSaleDisabledReason }}
+          </el-alert>
           <el-alert v-if="!userStore.isLoggedIn" type="info" show-icon :closable="false" style="margin-top: 16px">
             请先 <router-link to="/login">登录</router-link> 后加入购物车或购买
           </el-alert>
@@ -47,6 +107,7 @@ import { ShoppingCart } from '@element-plus/icons-vue';
 import { productsApi } from '@/api';
 import { useUserStore } from '@/stores/user';
 import { useCartStore } from '@/stores/cart';
+import CountdownTimer from '@/components/ui/CountdownTimer.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -57,6 +118,55 @@ const product = ref(null);
 const loading = ref(true);
 const quantity = ref(1);
 const placeholderImg = '/images/products/placeholder-600x600.png';
+
+const maxQuantity = computed(() => {
+  if (product.value?.flash_sale) {
+    return Math.min(1, product.value.flash_sale.stock, product.value.stock);
+  }
+  return product.value?.stock || 1;
+});
+
+const flashSoldPercent = computed(() => {
+  if (!product.value?.flash_sale) return 0;
+  const orig = product.value.flash_sale.original_stock || 0;
+  const stock = product.value.flash_sale.stock || 0;
+  if (orig <= 0) return 0;
+  return Math.round(((orig - stock) / orig) * 100);
+});
+
+const flashStockPercent = computed(() => 100 - flashSoldPercent.value);
+
+const isFlashSaleDisabled = computed(() => {
+  if (!product.value?.flash_sale) return false;
+  const fs = product.value.flash_sale;
+  const now = Date.now();
+  const startTime = new Date(fs.start_time).getTime();
+  const endTime = new Date(fs.end_time).getTime();
+  if (startTime > now) return true;
+  if (endTime <= now) return true;
+  if (fs.stock <= 0) return true;
+  return false;
+});
+
+const flashSaleDisabledReason = computed(() => {
+  if (!product.value?.flash_sale) return '';
+  const fs = product.value.flash_sale;
+  const now = Date.now();
+  const startTime = new Date(fs.start_time).getTime();
+  const endTime = new Date(fs.end_time).getTime();
+  if (startTime > now) return '秒杀活动尚未开始';
+  if (endTime <= now) return '秒杀活动已结束';
+  if (fs.stock <= 0) return '秒杀商品已售罄';
+  return '';
+});
+
+async function refreshFlashSale() {
+  try {
+    product.value = await productsApi.detail(route.params.id);
+  } catch {
+    // ignore
+  }
+}
 
 onMounted(async () => {
   try {
@@ -73,8 +183,13 @@ async function addToCart() {
     router.push('/login');
     return;
   }
+  if (isFlashSaleDisabled.value) {
+    ElMessage.warning(flashSaleDisabledReason.value);
+    return;
+  }
   try {
-    await cartStore.add(product.value.id, quantity.value);
+    const flashSaleId = product.value.flash_sale ? product.value.flash_sale.id : null;
+    await cartStore.add(product.value.id, quantity.value, flashSaleId);
     ElMessage.success('已加入购物车');
   } catch (e) {
     // message shown by interceptor
@@ -84,6 +199,10 @@ async function addToCart() {
 function buyNow() {
   if (!userStore.isLoggedIn) {
     router.push('/login');
+    return;
+  }
+  if (isFlashSaleDisabled.value) {
+    ElMessage.warning(flashSaleDisabledReason.value);
     return;
   }
   addToCart().then(() => {
@@ -100,6 +219,7 @@ function buyNow() {
   padding: 32px 0;
 }
 .gallery {
+  position: relative;
   background: #fff;
   border-radius: 12px;
   overflow: hidden;
@@ -110,6 +230,27 @@ function buyNow() {
   aspect-ratio: 1;
   object-fit: cover;
 }
+
+.flash-tag {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background: linear-gradient(135deg, #ef4444, #f97316);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 10;
+}
+
+.flash-tag .fire {
+  font-size: 16px;
+}
+
 .info h1 {
   font-size: 24px;
   font-weight: 600;
@@ -120,6 +261,92 @@ function buyNow() {
   line-height: 1.6;
   margin-bottom: 24px;
 }
+
+.flash-sale-box {
+  background: linear-gradient(135deg, #fef2f2 0%, #fff 100%);
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.flash-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.flash-label {
+  background: linear-gradient(135deg, #ef4444, #f97316);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 4px;
+}
+
+.flash-price-box {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.flash-price {
+  font-size: 36px;
+  font-weight: 800;
+  color: #ef4444;
+}
+
+.flash-orig {
+  font-size: 16px;
+  color: #94a3b8;
+  text-decoration: line-through;
+}
+
+.flash-discount {
+  background: #ef4444;
+  color: #fff;
+  font-size: 13px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.flash-stock-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.flash-stock-bar {
+  flex: 1;
+  height: 8px;
+  background: #fecaca;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.flash-stock-progress {
+  height: 100%;
+  background: linear-gradient(90deg, #f97316, #ef4444);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.flash-stock-text {
+  font-size: 13px;
+  color: #ef4444;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.flash-alert {
+  margin-top: 12px;
+}
+
 .price-box {
   display: flex;
   align-items: baseline;
@@ -143,7 +370,18 @@ function buyNow() {
   margin-bottom: 24px;
 }
 .actions { display: flex; gap: 12px; }
+
+.flash-btn {
+  background: linear-gradient(135deg, #ef4444, #f97316) !important;
+  border: none !important;
+}
+
+.flash-btn:hover {
+  opacity: 0.9;
+}
+
 @media (max-width: 768px) {
   .product-detail { grid-template-columns: 1fr; }
+  .flash-price { font-size: 28px; }
 }
 </style>

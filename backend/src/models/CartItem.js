@@ -17,6 +17,10 @@ const CartItem = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false
     },
+    flash_sale_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
     quantity: {
       type: DataTypes.INTEGER,
       allowNull: false,

@@ -17,6 +17,13 @@ export const productsApi = {
   detail: (id) => api.get(`/products/${id}`)
 };
 
+export const flashSalesApi = {
+  list: () => api.get('/flash-sales'),
+  homeList: (limit) => api.get('/flash-sales/home', { params: { limit } }),
+  detail: (id) => api.get(`/flash-sales/${id}`),
+  productActive: (productId) => api.get(`/flash-sales/product/${productId}/active`)
+};
+
 export const cartApi = {
   list: () => api.get('/cart'),
   add: (data) => api.post('/cart/add', data),

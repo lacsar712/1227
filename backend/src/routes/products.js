@@ -1,9 +1,50 @@
 const express = require('express');
 const { Op } = require('sequelize');
-const { Product, Category } = require('../models');
+const { Product, Category, FlashSale } = require('../models');
 const logger = require('../utils/logger');
 
 const router = express.Router();
+
+const getActiveFlashSale = async (productId, flashSaleId = null) => {
+  const now = new Date();
+  const where = {
+    product_id: productId,
+    status: 'active',
+    start_time: { [Op.lte]: now },
+    end_time: { [Op.gt]: now },
+    stock: { [Op.gt]: 0 }
+  };
+  if (flashSaleId) {
+    where.id = flashSaleId;
+  }
+  return await FlashSale.findOne({
+    where,
+    attributes: ['id', 'name', 'sale_price', 'stock', 'original_stock', 'start_time', 'end_time']
+  });
+};
+
+const enrichProductWithFlashSale = async (product) => {
+  const p = product.toJSON ? product.toJSON() : { ...product };
+  const flashSale = await getActiveFlashSale(p.id);
+  if (flashSale) {
+    p.flash_sale = {
+      id: flashSale.id,
+      name: flashSale.name,
+      sale_price: parseFloat(flashSale.sale_price),
+      stock: flashSale.stock,
+      original_stock: flashSale.original_stock,
+      start_time: flashSale.start_time,
+      end_time: flashSale.end_time
+    };
+    p.display_price = parseFloat(flashSale.sale_price);
+    p.original_display_price = parseFloat(p.price);
+  } else {
+    p.flash_sale = null;
+    p.display_price = parseFloat(p.price);
+    p.original_display_price = p.original_price ? parseFloat(p.original_price) : null;
+  }
+  return p;
+};
 
 router.get('/', async (req, res) => {
   try {
@@ -54,10 +95,15 @@ router.get('/', async (req, res) => {
       ]
     });
 
+    const list = [];
+    for (const p of rows) {
+      list.push(await enrichProductWithFlashSale(p));
+    }
+
     res.json({
       code: 0,
       data: {
-        list: rows,
+        list,
         total: count,
         page: parseInt(page, 10),
         limit: parseInt(limit, 10)
@@ -77,7 +123,9 @@ router.get('/:id', async (req, res) => {
     if (!product || product.status !== 'active') {
       return res.status(404).json({ code: 404, message: '商品不存在' });
     }
-    res.json({ code: 0, data: product });
+
+    const enriched = await enrichProductWithFlashSale(product);
+    res.json({ code: 0, data: enriched });
   } catch (err) {
     logger.error('Get product detail error:', err);
     res.status(500).json({ code: 500, message: '获取商品详情失败' });

@@ -1,4 +1,4 @@
-const { User, Category, Product, sequelize } = require('./models');
+const { User, Category, Product, FlashSale, sequelize } = require('./models');
 const logger = require('./utils/logger');
 
 const categories = [
@@ -142,53 +142,92 @@ const products = [
   }
 ];
 
+const flashSales = [
+  { product_idx: 0, name: '限时特惠-无线蓝牙耳机', sale_price: 199, stock: 20, hours_offset: [0, 2] },
+  { product_idx: 4, name: '限时特惠-纯棉T恤', sale_price: 39, stock: 50, hours_offset: [0, 3] },
+  { product_idx: 9, name: '限时特惠-记忆棉午睡枕', sale_price: 29, stock: 30, hours_offset: [1, 4] },
+  { product_idx: 11, name: '限时特惠-有机燕麦片', sale_price: 19, stock: 40, hours_offset: [2, 5] },
+  { product_idx: 1, name: '即将开抢-智能手表Pro', sale_price: 799, stock: 15, hours_offset: [24, 26] },
+  { product_idx: 5, name: '即将开抢-运动休闲鞋', sale_price: 149, stock: 25, hours_offset: [25, 27] }
+];
+
 async function run() {
   try {
     const catCount = await Category.count();
+    let createdCats;
+    let createdProducts;
+
     if (catCount > 0) {
-      logger.info('Seed already run, skipping');
-      return;
+      logger.info('Categories already exist, skipping product seed');
+      createdProducts = await Product.findAll({ attributes: ['id', 'name'], order: [['id', 'ASC']] });
+    } else {
+      createdCats = await Category.bulkCreate(categories);
+
+      const admin = await User.findOne({ where: { username: 'admin' } });
+      if (!admin) {
+        await User.create({
+          username: 'admin',
+          email: 'admin@example.com',
+          password: '123456',
+          nickname: '管理员'
+        });
+        logger.info('Admin user created');
+      }
+
+      const user = await User.findOne({ where: { username: 'user' } });
+      if (!user) {
+        await User.create({
+          username: 'user',
+          email: 'user@example.com',
+          password: '123456',
+          nickname: '测试用户'
+        });
+        logger.info('Test user created');
+      }
+
+      createdProducts = [];
+      for (let i = 0; i < products.length; i++) {
+        const p = products[i];
+        const cat = createdCats[p.category_idx];
+        const product = await Product.create({
+          category_id: cat.id,
+          name: p.name,
+          slug: `${p.slug}-${i}`,
+          description: p.description,
+          price: p.price,
+          original_price: p.original_price,
+          stock: p.stock,
+          image: p.image,
+          status: 'active'
+        });
+        createdProducts.push(product);
+      }
+      logger.info('Products seed completed');
     }
 
-    const createdCats = await Category.bulkCreate(categories);
-
-    const admin = await User.findOne({ where: { username: 'admin' } });
-    if (!admin) {
-      await User.create({
-        username: 'admin',
-        email: 'admin@example.com',
-        password: '123456',
-        nickname: '管理员'
-      });
-      logger.info('Admin user created');
+    const fsCount = await FlashSale.count();
+    if (fsCount === 0 && createdProducts && createdProducts.length > 0) {
+      const now = new Date();
+      for (const fs of flashSales) {
+        const product = createdProducts[fs.product_idx];
+        if (product) {
+          const startTime = new Date(now.getTime() + fs.hours_offset[0] * 60 * 60 * 1000);
+          const endTime = new Date(now.getTime() + fs.hours_offset[1] * 60 * 60 * 1000);
+          await FlashSale.create({
+            product_id: product.id,
+            name: fs.name,
+            sale_price: fs.sale_price,
+            original_stock: fs.stock,
+            stock: fs.stock,
+            start_time: startTime,
+            end_time: endTime,
+            status: 'active'
+          });
+        }
+      }
+      logger.info('Flash sales seed completed');
     }
 
-    const user = await User.findOne({ where: { username: 'user' } });
-    if (!user) {
-      await User.create({
-        username: 'user',
-        email: 'user@example.com',
-        password: '123456',
-        nickname: '测试用户'
-      });
-      logger.info('Test user created');
-    }
-
-    for (let i = 0; i < products.length; i++) {
-      const p = products[i];
-      const cat = createdCats[p.category_idx];
-      await Product.create({
-        category_id: cat.id,
-        name: p.name,
-        slug: `${p.slug}-${i}`,
-        description: p.description,
-        price: p.price,
-        original_price: p.original_price,
-        stock: p.stock,
-        image: p.image,
-        status: 'active'
-      });
-    }
     logger.info('Seed completed');
   } catch (err) {
     logger.error('Seed failed:', err);

@@ -12,10 +12,16 @@ export const cartModule = {
       return state.items.reduce((s, i) => s + i.quantity, 0);
     },
     total(state) {
-      return state.items.reduce(
-        (s, i) => s + (i.product?.price || 0) * i.quantity,
-        0
-      );
+      return state.items.reduce((s, i) => {
+        const price = i.effective_price !== undefined ? i.effective_price : (i.product?.price || 0);
+        return s + price * i.quantity;
+      }, 0);
+    },
+    validItems(state) {
+      return state.items.filter(i => !i.is_flash_sale_expired);
+    },
+    expiredItems(state) {
+      return state.items.filter(i => i.is_flash_sale_expired);
     }
   },
   mutations: {
@@ -37,8 +43,12 @@ export const cartModule = {
         return [];
       }
     },
-    async add({ dispatch }, { productId, quantity = 1 }) {
-      await cartApi.add({ product_id: productId, quantity });
+    async add({ dispatch }, { productId, quantity = 1, flashSaleId = null }) {
+      const data = { product_id: productId, quantity };
+      if (flashSaleId) {
+        data.flash_sale_id = flashSaleId;
+      }
+      await cartApi.add(data);
       await dispatch('fetchCart');
     },
     async updateQuantity({ dispatch }, { itemId, quantity }) {
@@ -62,15 +72,17 @@ export function useCartStore() {
   const items = computed(() => store.state.cart.items);
   const count = computed(() => store.getters['cart/count']);
   const total = computed(() => store.getters['cart/total']);
+  const validItems = computed(() => store.getters['cart/validItems']);
+  const expiredItems = computed(() => store.getters['cart/expiredItems']);
 
   const fetchCart = () => store.dispatch('cart/fetchCart');
-  const add = (productId, quantity = 1) =>
-    store.dispatch('cart/add', { productId, quantity });
+  const add = (productId, quantity = 1, flashSaleId = null) =>
+    store.dispatch('cart/add', { productId, quantity, flashSaleId });
   const updateQuantity = (itemId, quantity) =>
     store.dispatch('cart/updateQuantity', { itemId, quantity });
   const remove = (itemId) => store.dispatch('cart/remove', { itemId });
   const clear = () => store.dispatch('cart/clear');
 
-  return { items, count, total, fetchCart, add, updateQuantity, remove, clear };
+  return { items, count, total, validItems, expiredItems, fetchCart, add, updateQuantity, remove, clear };
 }
 

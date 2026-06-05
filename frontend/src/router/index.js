@@ -81,6 +81,12 @@ const routes = [
     name: 'Notifications',
     component: () => import('@/views/Notifications.vue'),
     meta: { title: '消息通知', auth: true }
+  },
+  {
+    path: '/flash-sale',
+    name: 'FlashSale',
+    component: () => import('@/views/FlashSale.vue'),
+    meta: { title: '限时秒杀' }
   }
 ];
 

@@ -1,12 +1,14 @@
 const express = require('express');
 const { body } = require('express-validator');
+const { Op } = require('sequelize');
 const {
   Order,
   OrderItem,
   Cart,
   CartItem,
   Address,
-  Product
+  Product,
+  FlashSale
 } = require('../models');
 const auth = require('../middleware/auth');
 const validate = require('../middleware/validate');
@@ -18,6 +20,21 @@ router.use(auth);
 
 const generateOrderNo = () => {
   return 'O' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2, 8);
+};
+
+const getActiveFlashSale = async (productId, flashSaleId = null) => {
+  const now = new Date();
+  const where = {
+    product_id: productId,
+    status: 'active',
+    start_time: { [Op.lte]: now },
+    end_time: { [Op.gt]: now },
+    stock: { [Op.gt]: 0 }
+  };
+  if (flashSaleId) {
+    where.id = flashSaleId;
+  }
+  return await FlashSale.findOne({ where });
 };
 
 router.get('/', async (req, res) => {
@@ -99,18 +116,48 @@ router.post(
 
       const items = [];
       let totalAmount = 0;
+      const flashSaleUpdates = [];
+
       for (const ci of cartItems) {
         if (!ci.Product) continue;
         const product = ci.Product;
-        const qty = Math.min(ci.quantity, product.stock);
-        if (qty <= 0) {
-          return res.status(400).json({ code: 400, message: `商品 ${product.name} 库存不足` });
+        let price = parseFloat(product.price);
+        let flashSale = null;
+
+        if (ci.flash_sale_id) {
+          flashSale = await getActiveFlashSale(product.id, ci.flash_sale_id);
+          if (!flashSale) {
+            return res.status(400).json({
+              code: 400,
+              message: `秒杀商品 ${product.name} 活动已结束或已售罄`
+            });
+          }
+          if (flashSale.stock < ci.quantity) {
+            return res.status(400).json({
+              code: 400,
+              message: `秒杀商品 ${product.name} 库存不足`
+            });
+          }
+          price = parseFloat(flashSale.sale_price);
+          flashSaleUpdates.push({
+            flashSale,
+            quantity: ci.quantity
+          });
+        } else {
+          if (product.stock < ci.quantity) {
+            return res.status(400).json({
+              code: 400,
+              message: `商品 ${product.name} 库存不足`
+            });
+          }
         }
-        const price = parseFloat(product.price);
+
+        const qty = ci.quantity;
         const subtotal = price * qty;
         totalAmount += subtotal;
         items.push({
           product_id: product.id,
+          flash_sale_id: flashSale ? flashSale.id : null,
           product_name: product.name,
           product_image: product.image,
           price,
@@ -138,12 +185,22 @@ router.post(
       for (const ci of cartItems) {
         const product = ci.Product;
         if (product) {
-          await product.update({
-            stock: product.stock - (items.find((i) => i.product_id === product.id)?.quantity || 0),
-            sales_count: product.sales_count + (items.find((i) => i.product_id === product.id)?.quantity || 0)
-          });
+          const item = items.find((i) => i.product_id === product.id);
+          if (item) {
+            await product.update({
+              stock: product.stock - item.quantity,
+              sales_count: product.sales_count + item.quantity
+            });
+          }
         }
       }
+
+      for (const fsu of flashSaleUpdates) {
+        await fsu.flashSale.update({
+          stock: fsu.flashSale.stock - fsu.quantity
+        });
+      }
+
       await CartItem.destroy({ where: { cart_id: cart.id } });
 
       const created = await Order.findByPk(order.id, {
@@ -204,6 +261,14 @@ router.post('/:id/cancel', async (req, res) => {
             stock: p.stock + oi.quantity,
             sales_count: Math.max(0, p.sales_count - oi.quantity)
           });
+        }
+        if (oi.flash_sale_id) {
+          const fs = await FlashSale.findByPk(oi.flash_sale_id);
+          if (fs) {
+            await fs.update({
+              stock: fs.stock + oi.quantity
+            });
+          }
         }
       }
     }

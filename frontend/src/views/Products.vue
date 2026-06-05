@@ -55,13 +55,14 @@
             >
               <div class="product-img">
                 <img :src="p.image || placeholderImg" :alt="p.name" />
-                <div class="product-badge" v-if="p.original_price">省{{ discount(p) }}%</div>
+                <div class="product-badge" v-if="p.flash_sale">🔥 秒杀中</div>
+                <div class="product-badge" v-else-if="p.original_price">省{{ discount(p) }}%</div>
               </div>
               <div class="product-info">
                 <h3>{{ p.name }}</h3>
                 <div class="price-row">
-                  <span class="price">¥{{ p.price }}</span>
-                  <span class="orig" v-if="p.original_price">¥{{ p.original_price }}</span>
+                  <span class="price" :class="{ 'flash-price': p.flash_sale }">¥{{ p.display_price || p.price }}</span>
+                  <span class="orig" v-if="p.original_display_price || p.original_price">¥{{ p.original_display_price || p.original_price }}</span>
                 </div>
               </div>
             </router-link>
@@ -238,6 +239,14 @@ function discount(p) {
 }
 .price-row { display: flex; gap: 8px; align-items: baseline; }
 .price { font-size: 18px; font-weight: 700; color: #ef4444; }
+.price.flash-price {
+  font-size: 20px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #ef4444, #f97316);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
 .orig { font-size: 13px; color: #94a3b8; text-decoration: line-through; }
 .pagination-wrap {
   margin-top: 24px;

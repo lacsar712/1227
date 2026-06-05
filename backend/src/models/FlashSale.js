@@ -1,47 +1,50 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
-const OrderItem = sequelize.define(
-  'OrderItem',
+const FlashSale = sequelize.define(
+  'FlashSale',
   {
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true
     },
-    order_id: {
-      type: DataTypes.INTEGER,
-      allowNull: false
-    },
     product_id: {
       type: DataTypes.INTEGER,
       allowNull: false
     },
-    flash_sale_id: {
-      type: DataTypes.INTEGER,
-      allowNull: true
-    },
-    product_name: {
+    name: {
       type: DataTypes.STRING(200),
       allowNull: false
     },
-    product_image: {
-      type: DataTypes.STRING(500)
-    },
-    price: {
+    sale_price: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false
     },
-    quantity: {
+    original_stock: {
       type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0
+    },
+    stock: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0
+    },
+    start_time: {
+      type: DataTypes.DATE,
       allowNull: false
     },
-    subtotal: {
-      type: DataTypes.DECIMAL(10, 2),
+    end_time: {
+      type: DataTypes.DATE,
       allowNull: false
+    },
+    status: {
+      type: DataTypes.ENUM('active', 'inactive'),
+      defaultValue: 'active'
     }
   },
-  { tableName: 'order_items' }
+  { tableName: 'flash_sales' }
 );
 
-module.exports = OrderItem;
+module.exports = FlashSale;
