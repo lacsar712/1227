@@ -77,7 +77,7 @@ export const checkInModule = {
           dispatch('points/fetchAccount', null, { root: true });
           dispatch('points/fetchTransactions', { limit: 5 }, { root: true });
         }
-        return { code: 0, data: result };
+        return { code: 0, data: { message: result?.message || '签到成功！' } };
       } catch (err) {
         console.error('Check-in error:', err);
         throw err;

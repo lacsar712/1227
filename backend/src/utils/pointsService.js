@@ -7,25 +7,27 @@ const CONFIG = {
   ORDER_MIN_POINTS: 1
 };
 
-async function getOrCreateAccount(userId) {
-  let account = await PointsAccount.findOne({ where: { user_id: userId } });
+async function getOrCreateAccount(userId, externalTransaction = null) {
+  const options = externalTransaction ? { where: { user_id: userId }, transaction: externalTransaction } : { where: { user_id: userId } };
+  let account = await PointsAccount.findOne(options);
   if (!account) {
+    const createOptions = externalTransaction ? { transaction: externalTransaction } : {};
     account = await PointsAccount.create({
       user_id: userId,
       balance: 0,
       total_earned: 0,
       total_spent: 0
-    });
+    }, createOptions);
   }
   return account;
 }
 
-async function addPoints(userId, amount, sourceType, sourceId = null, description = '') {
+async function addPoints(userId, amount, sourceType, sourceId = null, description = '', externalTransaction = null) {
   if (amount <= 0) throw new Error('积分数量必须大于0');
 
-  const t = await sequelize.transaction();
+  const t = externalTransaction || await sequelize.transaction();
   try {
-    const account = await getOrCreateAccount(userId);
+    const account = await getOrCreateAccount(userId, t);
 
     const newBalance = account.balance + amount;
     await account.update(
@@ -49,10 +51,10 @@ async function addPoints(userId, amount, sourceType, sourceId = null, descriptio
       { transaction: t }
     );
 
-    await t.commit();
+    if (!externalTransaction) await t.commit();
     return { success: true, balance: newBalance, added: amount };
   } catch (err) {
-    await t.rollback();
+    if (!externalTransaction) await t.rollback();
     logger.error('Add points error:', err);
     throw err;
   }

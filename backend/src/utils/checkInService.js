@@ -1,3 +1,4 @@
+const { Op } = require('sequelize');
 const { CheckInRecord, sequelize } = require('../models');
 const pointsService = require('./pointsService');
 const logger = require('./logger');
@@ -67,7 +68,7 @@ async function getCheckInStatus(userId, year, month) {
     where: {
       user_id: userId,
       check_in_date: {
-        [sequelize.Op.between]: [
+        [Op.between]: [
           startDate.toISOString().split('T')[0],
           endDate.toISOString().split('T')[0]
         ]
@@ -162,7 +163,8 @@ async function performCheckIn(userId) {
         reward.amount,
         'check_in',
         null,
-        `${reward.description} +${reward.amount}积分`
+        `${reward.description} +${reward.amount}积分`,
+        t
       );
     }
 
@@ -190,9 +192,9 @@ async function performCheckIn(userId) {
           consecutive_days: consecutiveDays,
           is_special: reward.isSpecialDay
         },
-        balance: rewardResult?.balance || 0
-      },
-      message: `签到成功！${reward.description}`
+        balance: rewardResult?.balance || 0,
+        message: `签到成功！${reward.description}`
+      }
     };
   } catch (err) {
     await t.rollback();
