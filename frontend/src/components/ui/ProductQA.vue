@@ -36,7 +36,7 @@
 
     <div class="login-prompt" v-else>
       <el-alert type="info" show-icon :closable="false">
-        请先 <router-link to="/login">登录</router-link> 后提问
+        请先 <router-link :to="loginRedirectUrl">登录</router-link> 后提问
       </el-alert>
     </div>
 
@@ -59,13 +59,24 @@
                 <span class="question-time">{{ formatTime(q.created_at) }}</span>
               </div>
             </div>
-            <el-tag
-              :type="q.status === 'answered' ? 'success' : 'warning'"
-              size="small"
-              effect="light"
-            >
-              {{ q.status === 'answered' ? '已回答' : '待回答' }}
-            </el-tag>
+            <div class="header-right">
+              <el-tag
+                :type="q.status === 'answered' ? 'success' : 'warning'"
+                size="small"
+                effect="light"
+              >
+                {{ q.status === 'answered' ? '已回答' : '待回答' }}
+              </el-tag>
+              <el-button
+                v-if="isAdmin && q.status === 'pending'"
+                type="primary"
+                size="small"
+                @click="openAnswerDialog(q)"
+              >
+                <el-icon><Edit /></el-icon>
+                回复
+              </el-button>
+            </div>
           </div>
 
           <div class="question-content">
@@ -110,13 +121,51 @@
         @current-change="handlePageChange"
       />
     </div>
+
+    <el-dialog
+      v-model="answerDialogVisible"
+      title="回复用户问题"
+      width="500px"
+      :close-on-click-modal="false"
+    >
+      <div class="answer-dialog">
+        <div class="question-preview">
+          <div class="preview-label">用户问题：</div>
+          <div class="preview-content">{{ currentQuestion?.content }}</div>
+        </div>
+        <el-form label-position="top">
+          <el-form-item label="回复内容">
+            <el-input
+              v-model="answerContent"
+              type="textarea"
+              :rows="5"
+              placeholder="请输入回复内容..."
+              maxlength="1000"
+              show-word-limit
+            />
+          </el-form-item>
+        </el-form>
+      </div>
+      <template #footer>
+        <el-button @click="answerDialogVisible = false">取消</el-button>
+        <el-button
+          type="primary"
+          :loading="answerSubmitting"
+          :disabled="!answerContent.trim()"
+          @click="submitAnswer"
+        >
+          提交回复
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
+import { useRoute } from 'vue-router';
 import { ElMessage } from 'element-plus';
-import { ChatDotRound, Promotion, OfficeBuilding } from '@element-plus/icons-vue';
+import { ChatDotRound, Promotion, OfficeBuilding, Edit } from '@element-plus/icons-vue';
 import { questionsApi } from '@/api';
 import { useUserStore } from '@/stores/user';
 
@@ -127,13 +176,28 @@ const props = defineProps({
   }
 });
 
+const route = useRoute();
 const userStore = useUserStore();
+
+const loginRedirectUrl = computed(() => {
+  const path = `/product/${props.productId}?tab=qa`;
+  return `/login?redirect=${encodeURIComponent(path)}`;
+});
+
+const isAdmin = computed(() => {
+  return userStore.isLoggedIn && userStore.user?.username === 'admin';
+});
 
 const questions = ref([]);
 const total = ref(0);
 const loading = ref(false);
 const submitting = ref(false);
 const questionContent = ref('');
+
+const answerDialogVisible = ref(false);
+const answerSubmitting = ref(false);
+const answerContent = ref('');
+const currentQuestion = ref(null);
 
 const pageSize = 10;
 const currentPage = ref(1);
@@ -186,6 +250,42 @@ async function submitQuestion() {
 function handlePageChange(page) {
   currentPage.value = page;
   loadQuestions();
+}
+
+function openAnswerDialog(question) {
+  currentQuestion.value = question;
+  answerContent.value = '';
+  answerDialogVisible.value = true;
+}
+
+async function submitAnswer() {
+  if (!currentQuestion.value) return;
+
+  const answer = answerContent.value.trim();
+  if (!answer) {
+    ElMessage.warning('回复内容不能为空');
+    return;
+  }
+
+  if (answer.length > 1000) {
+    ElMessage.warning('回复内容不能超过1000字');
+    return;
+  }
+
+  answerSubmitting.value = true;
+  try {
+    await questionsApi.answer(currentQuestion.value.id, { answer });
+    const idx = questions.value.findIndex(q => q.id === currentQuestion.value.id);
+    if (idx !== -1) {
+      questions.value[idx].status = 'answered';
+      questions.value[idx].answer = answer;
+      questions.value[idx].answered_at = new Date().toISOString();
+    }
+    answerDialogVisible.value = false;
+    ElMessage.success('回复成功');
+  } finally {
+    answerSubmitting.value = false;
+  }
 }
 
 function formatTime(time) {
@@ -300,6 +400,12 @@ onMounted(() => {
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 12px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .user-info {
@@ -455,6 +561,29 @@ onMounted(() => {
   justify-content: center;
 }
 
+.answer-dialog {
+  padding: 16px 0;
+}
+
+.question-preview {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.preview-label {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin-bottom: 8px;
+}
+
+.preview-content {
+  font-size: 15px;
+  color: var(--color-text);
+  line-height: 1.6;
+}
+
 @media (max-width: 768px) {
   .product-qa {
     padding: 16px;
@@ -473,6 +602,12 @@ onMounted(() => {
     flex-direction: column;
     align-items: stretch;
     gap: 12px;
+  }
+
+  .header-right {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
   }
 }
 </style>

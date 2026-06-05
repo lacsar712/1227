@@ -1,4 +1,4 @@
-const { User, Category, Brand, Product, FlashSale, PointsProduct, sequelize } = require('./models');
+const { User, Category, Brand, Product, FlashSale, PointsProduct, Question, sequelize } = require('./models');
 const logger = require('./utils/logger');
 
 const categories = [
@@ -231,6 +231,29 @@ const flashSales = [
   { product_idx: 18, name: '限时特惠-充电宝', sale_price: 79, stock: 30, hours_offset: [1, 5] },
   { product_idx: 36, name: '即将开抢-真皮公文包', sale_price: 399, stock: 10, hours_offset: [48, 50] },
   { product_idx: 42, name: '限时特惠-补水面膜', sale_price: 49, stock: 50, hours_offset: [2, 6] }
+];
+
+const questionsData = [
+  { product_idx: 0, user: 'user', content: '这款耳机的降噪效果怎么样？适合在地铁上用吗？', answer: '您好！这款耳机采用主动降噪技术，降噪深度可达35dB，完全可以隔绝地铁、公交等环境噪音，非常适合通勤使用。', status: 'answered' },
+  { product_idx: 0, user: 'user', content: '续航时间真实情况是多久？', answer: '您好！在开启降噪模式下可以使用约6小时，配合充电盒总续航可达30小时；关闭降噪模式下单次使用约8小时，总续航约40小时。', status: 'answered' },
+  { product_idx: 0, user: 'user', content: '支持苹果手机的AAC编码吗？', answer: '您好！支持的，这款耳机兼容SBC、AAC、aptX等多种编码格式，苹果和安卓手机都可以完美适配。', status: 'answered' },
+  { product_idx: 0, user: 'user', content: '请问耳机佩戴舒适吗？长时间戴会不会耳朵疼？', answer: null, status: 'pending' },
+  { product_idx: 6, user: 'user', content: '智能手表支持微信消息提醒吗？', answer: '您好！支持的，手机收到微信、短信、来电等消息时手表都会震动提醒，还可以查看消息内容。', status: 'answered' },
+  { product_idx: 6, user: 'user', content: '游泳的时候可以戴吗？防水等级是多少？', answer: '您好！这款手表支持50米防水，日常洗手、淋雨、游泳都可以佩戴，但不建议潜水或热水淋浴时使用。', status: 'answered' },
+  { product_idx: 6, user: 'user', content: '电池需要一天一充吗？', answer: null, status: 'pending' },
+  { product_idx: 12, user: 'user', content: '请问这个键盘支持热插拔轴体吗？', answer: '您好！这款键盘不支持热插拔，如果需要更换轴体需要使用烙铁进行焊接。如果您需要热插拔功能，可以看看我们的无线机械键盘那款。', status: 'answered' },
+  { product_idx: 12, user: 'user', content: '键盘的连接线是Type-C的吗？可以拔下来吗？', answer: '您好！连接线是Type-C接口的，并且支持键线分离，可以单独更换连接线。', status: 'answered' },
+  { product_idx: 16, user: 'user', content: '充电宝可以带上飞机吗？容量有没有超过规定？', answer: '您好！这款充电宝容量为20000mAh，额定能量为74Wh，符合民航局规定（不超过100Wh），可以随身携带上飞机，但不能托运。', status: 'answered' },
+  { product_idx: 24, user: 'user', content: 'T恤会不会缩水？洗了之后变形吗？', answer: '您好！这款T恤采用预缩水处理工艺，正常洗涤不会缩水变形。建议冷水洗涤，避免长时间浸泡。', status: 'answered' },
+  { product_idx: 30, user: 'user', content: '鞋子的尺码标准吗？我平时穿42码应该买多大？', answer: '您好！这款运动鞋尺码标准，建议按照平时穿的尺码购买即可。如果脚比较宽或者脚背高，可以考虑买大半码。', status: 'answered' },
+  { product_idx: 36, user: 'user', content: '包包的重量是多少？空包重不重？', answer: '您好！这款公文包空包重量约1.2kg，采用轻量化设计，长时间背负也不会感到累。', status: 'answered' },
+  { product_idx: 42, user: 'user', content: '面膜适合敏感肌使用吗？有没有酒精香精？', answer: '您好！这款面膜不含酒精、香精、防腐剂等刺激性成分，经过皮肤科测试，敏感肌也可以放心使用。建议首次使用前先在耳后做皮肤测试。', status: 'answered' },
+  { product_idx: 60, user: 'user', content: '午睡枕可以拆洗吗？外套是什么材质的？', answer: '您好！外套可以拆卸清洗，采用冰丝凉感面料，夏季使用清凉不闷汗，四季都适用。', status: 'answered' },
+  { product_idx: 66, user: 'user', content: '燕麦片需要煮吗？还是直接用开水泡就可以？', answer: '您好！这款是即食燕麦片，直接用开水或者热牛奶冲泡3-5分钟就可以食用，非常方便。如果喜欢更软糯的口感也可以煮一下。', status: 'answered' },
+  { product_idx: 66, user: 'user', content: '含糖吗？糖尿病人可以吃吗？', answer: null, status: 'pending' },
+  { product_idx: 1, user: 'user', content: '请问这款耳机的音质和无线蓝牙耳机比怎么样？', answer: null, status: 'pending' },
+  { product_idx: 18, user: 'user', content: '充电器支持给笔记本电脑充电吗？功率够不够？', answer: null, status: 'pending' },
+  { product_idx: 48, user: 'user', content: '粉底液的遮瑕力怎么样？能遮住痘印吗？', answer: null, status: 'pending' }
 ];
 
 const pointsProducts = [
@@ -474,6 +497,35 @@ async function run() {
     if (ppCount === 0) {
       await PointsProduct.bulkCreate(pointsProducts);
       logger.info('Points products seed completed');
+    }
+
+    const qCount = await Question.count();
+    if (qCount === 0) {
+      const user = await User.findOne({ where: { username: 'user' } });
+      const admin = await User.findOne({ where: { username: 'admin' } });
+      const allProducts = await Product.findAll({ order: [['id', 'ASC']] });
+      const now = new Date();
+
+      for (let i = 0; i < questionsData.length; i++) {
+        const q = questionsData[i];
+        const product = allProducts[q.product_idx];
+        if (product && user) {
+          const questionTime = new Date(now.getTime() - (i * 2 * 60 * 60 * 1000));
+          const answerTime = q.status === 'answered' ? new Date(questionTime.getTime() + (30 * 60 * 1000)) : null;
+
+          await Question.create({
+            product_id: product.id,
+            user_id: user.id,
+            content: q.content,
+            answer: q.answer,
+            status: q.status,
+            answered_at: answerTime,
+            created_at: questionTime,
+            updated_at: q.status === 'answered' ? answerTime : questionTime
+          });
+        }
+      }
+      logger.info('Questions seed completed');
     }
 
     logger.info('Seed completed');

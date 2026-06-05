@@ -139,7 +139,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { ShoppingCart, ArrowRight } from '@element-plus/icons-vue';
@@ -213,6 +213,9 @@ async function refreshFlashSale() {
 }
 
 onMounted(async () => {
+  if (route.query.tab === 'qa') {
+    activeTab.value = 'qa';
+  }
   try {
     product.value = await productsApi.detail(route.params.id);
     if (product.value) {
@@ -222,6 +225,14 @@ onMounted(async () => {
     product.value = null;
   } finally {
     loading.value = false;
+  }
+});
+
+watch(activeTab, (newTab) => {
+  if (newTab === 'qa') {
+    router.replace({ query: { tab: 'qa' } });
+  } else {
+    router.replace({ query: {} });
   }
 });
 
