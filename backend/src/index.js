@@ -17,6 +17,7 @@ const questionsRoutes = require('./routes/questions');
 const pointsRoutes = require('./routes/points');
 const refundsRoutes = require('./routes/refunds');
 const browseHistoryRoutes = require('./routes/browseHistory');
+const checkInRoutes = require('./routes/checkIn');
 
 const app = express();
 const PORT = process.env.PORT || 8227;
@@ -37,6 +38,7 @@ app.use('/api/questions', questionsRoutes);
 app.use('/api/points', pointsRoutes);
 app.use('/api/refunds', refundsRoutes);
 app.use('/api/browse-history', browseHistoryRoutes);
+app.use('/api/check-in', checkInRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

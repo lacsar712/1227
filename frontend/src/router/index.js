@@ -129,6 +129,12 @@ const routes = [
     name: 'RefundDetail',
     component: () => import('@/views/RefundDetail.vue'),
     meta: { title: '售后详情', auth: true }
+  },
+  {
+    path: '/check-in',
+    name: 'CheckIn',
+    component: () => import('@/views/CheckIn.vue'),
+    meta: { title: '每日签到', auth: true }
   }
 ];
 

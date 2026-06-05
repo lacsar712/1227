@@ -95,3 +95,10 @@ export const browseHistoryApi = {
   clear: () => api.delete('/browse-history'),
   sync: (items) => api.post('/browse-history/sync', { items })
 };
+
+export const checkInApi = {
+  getStatus: (params) => api.get('/check-in/status', { params }),
+  checkIn: () => api.post('/check-in/check-in'),
+  getHistory: (params) => api.get('/check-in/history', { params }),
+  getRewards: () => api.get('/check-in/rewards')
+};

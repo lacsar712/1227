@@ -5,6 +5,7 @@ import { confirmModule } from '@/stores/confirm';
 import { notificationModule } from '@/stores/notification';
 import { pointsModule } from '@/stores/points';
 import { historyModule } from '@/stores/history';
+import { checkInModule } from '@/stores/checkIn';
 
 const store = createStore({
   modules: {
@@ -13,7 +14,8 @@ const store = createStore({
     confirm: confirmModule,
     notification: notificationModule,
     points: pointsModule,
-    history: historyModule
+    history: historyModule,
+    checkIn: checkInModule
   },
   plugins: [
     (store) => {

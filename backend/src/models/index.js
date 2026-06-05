@@ -17,6 +17,7 @@ const PointsProduct = require('./PointsProduct');
 const PointsRedeemRecord = require('./PointsRedeemRecord');
 const Refund = require('./Refund');
 const BrowseHistory = require('./BrowseHistory');
+const CheckInRecord = require('./CheckInRecord');
 
 User.hasMany(Address, { foreignKey: 'user_id' });
 Address.belongsTo(User, { foreignKey: 'user_id' });
@@ -83,6 +84,9 @@ User.hasMany(BrowseHistory, { foreignKey: 'user_id' });
 BrowseHistory.belongsTo(User, { foreignKey: 'user_id' });
 BrowseHistory.belongsTo(Product, { foreignKey: 'product_id' });
 
+User.hasMany(CheckInRecord, { foreignKey: 'user_id' });
+CheckInRecord.belongsTo(User, { foreignKey: 'user_id' });
+
 module.exports = {
   sequelize,
   User,
@@ -102,5 +106,6 @@ module.exports = {
   PointsProduct,
   PointsRedeemRecord,
   Refund,
-  BrowseHistory
+  BrowseHistory,
+  CheckInRecord
 };

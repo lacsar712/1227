@@ -12,6 +12,10 @@
       </div>
       <el-divider />
       <div class="quick-links">
+        <router-link to="/check-in" class="link-item">
+          <el-icon :size="24"><Calendar /></el-icon>
+          <span>每日签到</span>
+        </router-link>
         <router-link to="/orders" class="link-item">
           <el-icon :size="24"><Document /></el-icon>
           <span>我的订单</span>
@@ -31,6 +35,33 @@
         <router-link to="/points-mall" class="link-item">
           <el-icon :size="24"><Gift /></el-icon>
           <span>积分商城</span>
+        </router-link>
+      </div>
+    </el-card>
+
+    <el-card shadow="never" class="checkin-entry-card">
+      <div class="checkin-entry">
+        <div class="checkin-info">
+          <div class="checkin-icon">
+            <el-icon :size="28" :color="checkInStore.checkedInToday.value ? '#10b981' : '#6366f1'">
+              <CalendarIcon />
+            </el-icon>
+          </div>
+          <div class="checkin-text">
+            <h3>每日签到</h3>
+            <p v-if="checkInStore.checkedInToday.value" class="checked-status">
+              <el-icon :size="14"><CircleCheck /></el-icon>
+              今日已签到，连续{{ checkInStore.consecutiveDays.value }}天
+            </p>
+            <p v-else class="not-checked-status">
+              已连续签到{{ checkInStore.consecutiveDays.value }}天，今日签到可获得
+              <span class="reward">{{ checkInStore.todayReward.value?.amount || 10 }}积分</span>
+            </p>
+          </div>
+        </div>
+        <router-link to="/check-in" class="checkin-action">
+          {{ checkInStore.checkedInToday.value ? '查看详情' : '立即签到' }}
+          <el-icon><ArrowRight /></el-icon>
         </router-link>
       </div>
     </el-card>
@@ -126,12 +157,14 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { Document, Location, ShoppingCart, Gift, Wallet, ArrowRight, TrendCharts, Minus, Clock } from '@element-plus/icons-vue';
+import { Document, Location, ShoppingCart, Gift, Wallet, ArrowRight, TrendCharts, Minus, Clock, Calendar, Calendar as CalendarIcon, CircleCheck } from '@element-plus/icons-vue';
 import { useUserStore } from '@/stores/user';
 import { usePointsStore } from '@/stores/points';
+import { useCheckInStore } from '@/stores/checkIn';
 
 const userStore = useUserStore();
 const pointsStore = usePointsStore();
+const checkInStore = useCheckInStore();
 const activeTab = ref('transactions');
 
 function formatNumber(num) {
@@ -151,6 +184,7 @@ function formatTime(time) {
 
 async function loadData() {
   await userStore.fetchUser();
+  await checkInStore.fetchStatus();
   await pointsStore.fetchAccount();
   await pointsStore.fetchTransactions({ limit: 20 });
   await pointsStore.fetchRecords({ limit: 20 });
@@ -165,6 +199,79 @@ onMounted(() => {
 .profile-card {
   max-width: 800px;
   margin-bottom: 24px;
+}
+
+.checkin-entry-card {
+  max-width: 800px;
+  margin-bottom: 24px;
+}
+
+.checkin-entry {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+}
+
+.checkin-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+}
+
+.checkin-icon {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+  border-radius: 16px;
+  flex-shrink: 0;
+}
+
+.checkin-text h3 {
+  font-size: 16px;
+  margin: 0 0 4px;
+  color: #1e293b;
+}
+
+.checkin-text p {
+  font-size: 13px;
+  margin: 0;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.checkin-text .checked-status {
+  color: #10b981;
+}
+
+.checkin-text .reward {
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+.checkin-action {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.checkin-action:hover {
+  opacity: 0.9;
+  color: white;
 }
 
 .profile-header {
@@ -185,7 +292,7 @@ onMounted(() => {
 
 .quick-links {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 16px;
 }
 
@@ -406,6 +513,16 @@ onMounted(() => {
 @media (max-width: 600px) {
   .quick-links {
     grid-template-columns: repeat(3, 1fr);
+  }
+
+  .checkin-entry {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  .checkin-action {
+    justify-content: center;
   }
 
   .points-balance-section {
